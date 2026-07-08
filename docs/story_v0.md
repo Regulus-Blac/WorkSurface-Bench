@@ -1,5 +1,28 @@
 # WorkSurface-Bench Story Draft v0
 
+**⚠️ 2026-07-09 UPDATE**: This doc was written before the related-work
+survey returned. Its three-scenario fallback positioning is superseded
+by the actual survey findings in `related_work_survey_raw.md` +
+`related_work_zh.md`.
+
+- Scenario A (someone already did multi-surface routing on public data
+  like an "AMA-Bench"): **does not exist**. No published benchmark
+  combines all four surfaces {docs, dep-graph, table, SOP} with a
+  routing decision.
+- Scenario B (WSB 2.0 adds routing): **low near-term probability** —
+  SJTU team focused on workspace learning main track.
+- Scenario C (tool-use benchmarks claim routing): **partially true** —
+  MetaTool / T-Eval / API-Bank score routing at tool granularity
+  (hundreds of tools); we score at surface granularity (4 surfaces).
+  Clean distinction.
+
+**Current paper-grade specification: `paper_spec_zh.md`.**
+**Current related-work positioning: `related_work_zh.md`.**
+
+This draft is preserved as historical thinking. Use the two docs above
+for actual paper writing.
+
+---
 Written before the related-work survey returns. Pitch angle plus fallback
 positioning for the three most-likely related-work scenarios. When the
 survey lands, we tighten the differentiation section against real papers,

@@ -22,7 +22,15 @@ spec、experiment matrix。Pilot 完成后所有具体数字回填。
 - Skill 作 `applicable_skills` 元数据，非路由
 - 产物：`data/worksurface_lite/`（HF dataset）+ `schemas/task.schema.json`
 
-**和 §2 数据字段一一对应。审稿人问"到底有什么"看 §2。**
+**定位（基于 2026-07 related work 调研，见 `related_work_zh.md`）**：
+第一个把四种类别上不同的知识面（unstructured docs / file dependency
+graph / DuckDB-queryable tables / procedural SOPs）放在同一个企业
+workspace 上评测的 benchmark。相邻工作分两类：**融合 surface 但不评
+路由**（HybridQA、OTT-QA、MMQA、SPARTA 停在两面）；**评路由但没有
+异构 surface**（MetaTool、T-Eval、API-Bank 只有 tool 粒度）。**没有
+一篇论文同时做两件事。**
+
+**§2 数据字段一一对应。审稿人问"到底有什么"看 §2。**
 
 ### C2. 一条从 Workspace-Bench 派生的 pipeline，不合成、不混外部
 
@@ -253,6 +261,12 @@ Pilot 完成后回填的三张统计表：
 | Graph edge density 中位数 < 5 | 砍 Graph，改 RAG + Table，重心放在 abstain / cross-profile |
 | Oracle-Naive gap < 10 points | 主图换成 Figure 3(c) 的 per-surface breakdown |
 
+**外部威胁**（基于 2026-07 related work 调研）：**MetaTool、STaRK 或
+TheAgentCompany 团队**可能扩展工作把路由推到 knowledge-surface 粒度。
+调研确认目前没有这样的 concurrent work，但相邻团队都有能力做。
+**触发条件 = arXiv 预印被拖到 2027-01 之后**。应对：Timeline 2026-11
+末 arXiv 挂预印，抢占位置。
+
 ---
 
 ## 4. 写作 timeline（假设投 NeurIPS 2027 D&B）
@@ -260,8 +274,8 @@ Pilot 完成后回填的三张统计表：
 - **2026-07 (now) → 2026-09**：完成 pilot、solutions §5.1-5.5、
   数据构建全流程；产出所有 §2.4 statistics
 - **2026-10**：跑完 25 run leaderboard，图表定稿
-- **2026-11**：初稿完成，走内部 review
-- **2026-12**：arXiv 挂预印（占位很重要）
+- **2026-11**：初稿完成，走内部 review + **arXiv 挂预印**（抢在
+  MetaTool/STaRK/TheAgentCompany 后续工作前面占位）
 - **2027-01**：可能投 COLM 2027 (03 月截) 做一次赛前热身
 - **2027-06**：正式投 NeurIPS 2027 D&B
 

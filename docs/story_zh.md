@@ -1,5 +1,24 @@
 # WorkSurface-Bench 故事草稿 v0（中文版）
 
+**⚠️ 2026-07-09 更新**：本文档写作时相关工作调研尚未回来，其中"三种
+fallback 场景"（A/B/C）已被 `related_work_zh.md` 的实际调研结果替代：
+
+- 场景 A（AMA-Bench 类做过完全一样的事）**不成立**——AMA-Bench 是
+  agent memory benchmark，不是多面路由；没有任何 benchmark 同时把
+  4 个知识面放在同一 workspace 上并评路由。
+- 场景 B（WSB 2.0 抢发路由）**近期概率低**——SJTU 团队专注 workspace
+  learning 主线。
+- 场景 C（tool-use benchmark 自称路由）**部分成立**——MetaTool/T-Eval/
+  API-Bank 评路由但只有 tool 粒度（数百个 tool），我们评的是 surface
+  粒度（4 个知识面）。可以清楚区分。
+
+**当前对相邻工作的正式定位见 `related_work_zh.md`**。
+**当前的 paper-grade 规格见 `paper_spec_zh.md`**（Contributions +
+Dataset spec + Experiment matrix）。
+
+本文档保留作为原始思路记录，正式论文写作请参考上面两份。
+
+---
 本文档是 `story_v0.md` 的中文对照版。写作时相关工作调研尚未回来，因此
 positioning 一节先用三个最有可能的场景做后手，等调研完成后再针对真实
 论文重写。
