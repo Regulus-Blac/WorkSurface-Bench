@@ -4,63 +4,66 @@ Concrete algorithms for the problems raised in
 [`improvements_v0.md`](improvements_v0.md). Each section gives an executable
 procedure, not a principle. Read alongside the improvements doc.
 
+## Naming decision (applied)
+
+The Table surface replaces the SQL surface. Wherever this doc references
+tools or evidence fields, the current names are: `table_list`,
+`table_describe`, `table_query` (DuckDB SQL string), evidence field
+`query`. The rest of the algorithms are unchanged.
+
 ## 1. Structural gaps
 
-### 1.1 "No relational DB" — schema-fingerprint clustering + per-workbook mini-DBs
+### 1.1 "No relational DB" — per-workbook DuckDB views (v0.1); consolidation deferred
 
-Two-track approach. Both tracks are automatic, no synthesis of fake tables.
+Simplified after the SQL→Table rename. **v0.1 = Track B only**. Track A
+becomes an optional v0.2 extension.
 
-**Track A: Cross-task consolidated tables.** Find spreadsheets across tasks
-that share a schema and union them, creating a real "enterprise-scale"
-structured surface.
-
-```
-for each .xlsx / .csv in the Lite-en source:
-  columns = normalize(header_row)      # lowercase, strip whitespace, deunit
-  fingerprint = sorted(columns)
-  types = infer_types(first 20 rows)
-  key = (fingerprint, types)
-
-cluster = {key: [file1, file2, ...]}
-
-for each cluster with |files| >= 3 and spanning >= 2 tasks:
-  union all files into consolidated_table_<hash>
-  add provenance cols: _source_task_id, _source_file, _source_row_id
-  register in db/workspace.sqlite
-  derive SQL tasks:
-    - global aggregate: "How many rows across the workspace where X > Y?"
-    - top-k: "Which task's file contributed the most rows in category C?"
-    - cross-task compare: "For column X, is task A's file higher than task B's?"
-```
-
-Fuzzy schema match: two headers match if edit distance ≤ 2 after
-normalization OR if a synonym dictionary maps them (`qty` ↔ `quantity`,
-`item_id` ↔ `sku`). Ship the synonym dict in the repo; it is auditable.
-
-**Track B: Per-workbook mini-DBs.** For a single task's workbook with 3+
-related sheets, treat the workbook as its own DB and derive intra-workbook
-joins.
+**v0.1 core: Per-workbook DuckDB view registry**
 
 ```
-for each task with >= 3 spreadsheets or a multi-sheet .xlsx:
-  build per-task .sqlite
-  detect join keys: columns with same normalized name across sheets
-  if >= 1 join key found:
-    derive SQL tasks requiring a JOIN
+for each task with any .xlsx / .csv / .xls:
+  for each sheet in the workbook(s):
+    normalize header (lowercase, strip whitespace, deunit)
+    infer types (first 20 rows)
+    register a DuckDB view:
+      view_name = <safe_file_stem>__<sheet_name>
+      SELECT * FROM read_csv_auto(...) / read_xlsx(...)
+    add provenance columns as computed view fields:
+      _source_file, _source_sheet, _source_row_id
+
+  if >= 3 sheets in this task share a normalized column name:
+    mark the sheets as candidates for a JOIN task
+    derive at most 1 JOIN-based table task
   else:
-    fall back to single-table aggregate tasks
+    derive single-table aggregate tasks only
+
+  tag as `table_only` only if:
+    row_count >= 30  OR  distinct groups >= 5  OR
+    answer needs an aggregate that the question does not explicitly state
+  otherwise: sheet goes to RAG (converted to markdown table), no table task
 ```
 
-**What to do with the rest**: tasks whose spreadsheets don't fit either
-track do NOT get a SQL surface. Their `.xlsx`/`.csv` are converted to
-markdown tables and go to RAG. Report the coverage in the release notes:
+**v0.2 optional: cross-task consolidated tables**
+
+Same schema-fingerprint clustering as the earlier v0 draft, but gated by:
+
+- coverage threshold: consolidation only if it improves table-track coverage
+  by at least 10 percentage points, otherwise the added complexity is
+  net-negative for router evaluation
+- rename note: the consolidated view carries `_source_task_id` in addition
+  to the per-row provenance columns
+
+**Coverage report** (published in release notes):
 
 ```
-sql_track_coverage = |tasks with >=1 SQL-eligible cluster or mini-DB| / |all tasks|
+table_track_coverage = |tasks with >=1 table_only or table-touching task|
+                     / |tasks with tabular files|
+
+table_only_share      = |table_only tasks| / |all Lite atomic tasks|
 ```
 
-Target: ≥ 30% Lite coverage. Below that, the SQL surface is too sparse
-to route to — cut it to `structured_rag` for v0.1 and try again for v0.2.
+If `table_track_coverage < 30%`, the surface is too sparse — recut Lite
+core to RAG + Graph + Skill and keep Table as an extension track.
 
 ### 1.2 Shallow dep graph — multi-signal edge enrichment
 
@@ -256,7 +259,7 @@ where the ask genuinely requires them.
 ```
 for every task, load ALL four surfaces regardless of ground truth:
   - RAG: all task input docs
-  - SQL: all consolidated + mini-DB tables the profile has
+  - Table: all registered views for the profile
   - Graph: full surface_graph
   - Skills: all skills registered to the persona
 
@@ -423,8 +426,8 @@ Priority ranking by "if this fails, everything else fails":
 
 1. **§1.3 rubric classifier + extractive rewriter** — without this we have
    no automatic gold answers at all. Do this first, on all 100 Lite tasks.
-2. **§1.1 spreadsheet clustering** — decides whether SQL is a viable
-   surface. Do this second; the answer decides Lite's surface count.
+2. **§1.1 table coverage check** — decides whether Table is a viable
+   surface. Cheap; just walk every task's spreadsheets, run the tag rule.
 3. **§1.2 graph enrichment Phase A** — programmatic only, no LLM. Cheap
    to run. Decides whether Graph is Lite-eligible.
 4. **§3 wsb_lock + closed-book probe** — trivial to implement, high value.
@@ -433,7 +436,7 @@ Priority ranking by "if this fails, everything else fails":
 6. **§2 evaluation harnesses** — deferred to pilot execution phase.
 
 Each of 1-5 has a clear go/no-go on whether the surface survives to Lite
-v0.1. If SQL fails coverage or Graph fails edge density, drop them from
+v0.1. If Table fails coverage or Graph fails edge density, drop them from
 Lite core and keep as extension tracks — better than shipping a
 "routing" benchmark where two of the four surfaces are trivial.
 

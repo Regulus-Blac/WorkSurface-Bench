@@ -14,7 +14,7 @@
 - [ ] Inspect `data_manifest`, `file_dep_graph`, rubrics, and output files.
 - [ ] Implement file-type routing:
   - documents to `kb_docs/`;
-  - CSV/XLSX to SQLite;
+  - CSV/XLSX to per-task table registry (DuckDB views over raw files);
   - dependency graph to `surface_graph.json`;
   - rubrics/workflows to skills.
 - [ ] Produce the first canonical profile.
@@ -23,8 +23,8 @@
 
 - [ ] Convert rubrics into atomic QA tasks.
 - [ ] Convert dependency graph entries into routing/evidence tasks.
-- [ ] Generate cross-surface tasks for RAG + SQL, Graph + RAG, SQL + Skill,
-      and RAG + Graph + SQL.
+- [ ] Generate cross-surface tasks for RAG + Table, Graph + RAG, Table + Skill,
+      and RAG + Graph + Table.
 - [ ] Manually audit the first 100 derived tasks.
 
 ## Milestone 3: Runner and Scoring

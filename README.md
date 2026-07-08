@@ -38,8 +38,15 @@ The core benchmark focuses on shared enterprise knowledge surfaces:
 | --- | --- | --- |
 | RAG / KB | Documents, reports, PDFs, text files, slide text | `kb_search` |
 | Graph | File dependency graph, task-file-output links, lineage | `graph_search_entities`, `graph_traverse`, `graph_neighbors` |
-| SQL / Database | CSV/XLSX sheets and structured business records | `db_list_tables`, `db_describe_table`, `db_query_sql` |
+| Table | CSV/XLSX spreadsheets and structured business records | `table_list`, `table_describe`, `table_query` |
 | Skills | Rubrics, repeated workflows, SOP-like instructions | `skill_search`, `skill_get` |
+
+The Table surface is deliberately not framed as an enterprise SQL benchmark
+(cf. BIRD, Spider). Workspace-Bench-derived spreadsheets are typically small,
+per-task, and disjoint. Our claim is only that the agent should recognize
+when a question needs aggregation or filtering over structured rows and route
+to `table_query` (backed by DuckDB / pandas), instead of reading the sheet as
+prose. That routing decision is what we measure.
 
 Personal or session memory is intentionally not part of the core benchmark. It
 can be added later as a stateful personalization extension, but the main task is
@@ -54,7 +61,7 @@ source data, but changes the evaluation target:
 | Benchmark | Main question |
 | --- | --- |
 | Workspace-Bench | Can the agent find and use the right workspace files to complete tasks? |
-| WorkSurface-Bench | Can the agent route across RAG, graph, SQL, and skills to produce grounded answers? |
+| WorkSurface-Bench | Can the agent route across RAG, graph, tables, and skills to produce grounded answers? |
 
 The intended pipeline is:
 
@@ -65,7 +72,7 @@ Workspace files + manifests + file dependency graph + rubrics
 Canonical multi-surface profile
         |
         v
-RAG docs + SQLite tables + surface graph + skills
+RAG docs + tables + surface graph + skills
         |
         v
 Routing/evidence/answer evaluation
@@ -78,7 +85,7 @@ Each benchmark profile should contain:
 ```text
 profile_<name>/
   kb_docs/                 # canonical text documents for RAG
-  db/workspace.sqlite      # tables converted from CSV/XLSX
+  tables/                  # per-task CSVs, plus a DuckDB view registry
   graph/surface_graph.json # file/task/output/entity dependency graph
   skills/                  # SOP and rubric-derived skills
   tasks/tasks.jsonl        # atomic routing tasks
@@ -105,11 +112,11 @@ The data construction plan and scale targets are documented in
 WorkSurface-Bench decomposes workspace tasks into atomic diagnostic tasks:
 
 1. **RAG-only**: answer from documents and reports.
-2. **SQL-only**: answer from structured tables and spreadsheets.
+2. **Table-only**: answer from structured tables and spreadsheets (aggregation, filtering, top-k).
 3. **Graph-only**: answer from file, task, lineage, or entity relations.
 4. **Skill-only**: follow a rubric, SOP, or workflow.
-5. **Cross-surface**: combine at least two surfaces, such as RAG + SQL, Graph +
-   RAG, SQL + Skill, or RAG + Graph + SQL.
+5. **Cross-surface**: combine at least two surfaces, such as RAG + Table, Graph +
+   RAG, Table + Skill, or RAG + Graph + Table.
 
 The cross-surface tasks are the main contribution. They test whether a model can
 decide that a question needs more than one knowledge representation.
@@ -153,7 +160,8 @@ The initial benchmark should include:
 1. Start from Workspace-Bench-Lite.
 2. Convert each workspace/persona into one multi-surface profile.
 3. Convert documents into RAG-ready canonical text.
-4. Convert CSV/XLSX files into SQLite tables with provenance.
+4. Convert CSV/XLSX files into a per-task table registry (DuckDB views over
+   raw CSV, no cross-task schema unification) with provenance.
 5. Convert file dependency graphs into surface graphs.
 6. Convert rubrics and repeated workflow requirements into skills.
 7. Derive atomic routing tasks from rubrics and task dependencies.
@@ -165,7 +173,7 @@ The first milestone is a small but complete **WorkSurface-Bench-Lite**:
 ```text
 100 Workspace-Bench-derived tasks
 300-800 atomic WorkSurface tasks
-RAG + Graph + SQL + Skills
+RAG + Graph + Table + Skills
 No external benchmark mixing
 No synthetic enterprise world as the main data source
 ```

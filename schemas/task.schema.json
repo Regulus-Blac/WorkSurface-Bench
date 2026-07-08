@@ -55,7 +55,7 @@
       "type": "string",
       "enum": [
         "rag_only",
-        "sql_only",
+        "table_only",
         "graph_only",
         "skill_only",
         "cross_surface"
@@ -67,14 +67,14 @@
       "uniqueItems": true,
       "items": {
         "type": "string",
-        "enum": ["rag", "graph", "sql", "skill"]
+        "enum": ["rag", "graph", "table", "skill"]
       }
     },
     "gold_tools": {
       "type": "array",
       "items": {
         "type": "string",
-        "examples": ["kb_search", "graph_traverse", "db_query_sql", "skill_get"]
+        "examples": ["kb_search", "graph_traverse", "table_query", "skill_get"]
       }
     },
     "gold_answer": {
@@ -102,7 +102,7 @@
         "properties": {
           "surface": {
             "type": "string",
-            "enum": ["rag", "graph", "sql", "skill"]
+            "enum": ["rag", "graph", "table", "skill"]
           },
           "file": {
             "type": "string"
@@ -117,8 +117,9 @@
             "type": "array",
             "items": {"type": "string"}
           },
-          "sql": {
-            "type": "string"
+          "query": {
+            "type": "string",
+            "description": "Executable query against the table surface (DuckDB SQL over the per-task table registry)."
           },
           "graph_path": {
             "type": "array",

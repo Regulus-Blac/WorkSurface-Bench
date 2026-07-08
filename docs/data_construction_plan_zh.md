@@ -10,7 +10,7 @@ WorkSurface-Bench 的数据构建目标不是重新发明一套企业数据，�
 2. 不混合 RAGBench、BIRD、STaRK、AMA-Bench 等 public benchmark 作为主任务数据。
 3. 不依赖自合成企业世界作为主数据源。
 4. LLM 可以辅助抽取候选任务和改写问题，但不能单独决定 gold answer / gold evidence。
-5. 评测主线是 RAG / Graph / SQL / Skills 四个企业共享知识面；Memory 暂不进入 core track。
+5. 评测主线是 RAG / Graph / Table / Skills 四个企业共享知识面；Memory 暂不进入 core track。
 
 Workspace-Bench 的公开规模为：5 个 worker profiles、74 种文件类型、20,476 个文件、388 个任务、7,399 个 rubrics，并提供 100-task Lite 子集。WorkSurface-Bench 使用这些任务、文件、依赖图和 rubrics 作为可信源。
 
@@ -33,7 +33,7 @@ rubrics / output requirements
 ```text
 WorkSurface profile
   kb_docs/
-  db/workspace.sqlite
+  tables/
   graph/surface_graph.json
   skills/
   tasks/tasks.jsonl
@@ -76,7 +76,7 @@ kb_docs/<canonical_file_id>.md
 
 Core track 使用 canonical text，不把 OCR 或复杂版面解析作为主评测能力。后续可以增加 Raw-Ingest Track，专门评测从原始 PDF/Office 文件到 surfaces 的端到端解析能力。
 
-### 2. SQL / Database
+### 2. Table
 
 输入：
 
@@ -88,16 +88,18 @@ Core track 使用 canonical text，不把 OCR 或复杂版面解析作为主评�
 输出：
 
 ```text
-db/workspace.sqlite
+tables/
+  <safe_file_stem>__<sheet_name>.csv         # 原始行导出
+  registry.json                              # DuckDB view 注册表
 ```
 
-表命名规则：
+每张 view 通过 DuckDB `read_csv_auto` / `read_xlsx` 建立，命名规则：
 
 ```text
 <safe_file_stem>__<sheet_name>
 ```
 
-每张表额外加入 provenance columns：
+每张 view 额外暴露 provenance columns：
 
 ```text
 _source_file
@@ -105,16 +107,25 @@ _source_sheet
 _source_row_id
 ```
 
-SQL gold evidence 必须可执行验证：
+Table gold evidence 用可执行 query（DuckDB SQL）验证：
 
 ```json
 {
-  "surface": "sql",
+  "surface": "table",
   "table": "inventory_current",
-  "sql": "SELECT COUNT(*) FROM inventory_current WHERE variance < 0",
+  "query": "SELECT COUNT(*) FROM inventory_current WHERE variance < 0",
   "expected_result": 8
 }
 ```
+
+我们**不**做以下几件事：
+
+- 不合并跨任务 schema 建"企业级"事实表；
+- 不按 SQL 语法复杂度加权任务；
+- 不追求 BIRD / Spider 那类 SQL 表达 benchmark；
+
+Table surface 的评测目标是 **路由决策**（该不该走表格聚合），不是 SQL 表达
+能力本身。
 
 ### 3. Graph
 
@@ -195,7 +206,7 @@ rubrics 的具体答案仍只用于生成 gold answer / gold evidence，不作�
 
 从文档内容回答，例如报告中的结论、政策中的阈值、说明文档中的定义。
 
-2. `sql_only`
+2. `table_only`
 
 从表格或 spreadsheet 计算答案，例如 count、sum、top-k、filter、group-by。
 
@@ -212,12 +223,12 @@ rubrics 的具体答案仍只用于生成 gold answer / gold evidence，不作�
 需要至少两个 surface。优先构造以下组合：
 
 ```text
-RAG + SQL
+RAG + Table
 RAG + Graph
-SQL + Skill
+Table + Skill
 Graph + Skill
-RAG + Graph + SQL
-RAG + SQL + Skill
+RAG + Graph + Table
+RAG + Table + Skill
 ```
 
 ### 每个原始任务的派生配额
@@ -228,7 +239,7 @@ RAG + SQL + Skill
 1 个 route overview task
 1-2 个 graph/dependency task
 1-3 个 rubric-derived answer task
-0-2 个 sql task，取决于是否有 CSV/XLSX
+0-2 个 table task，取决于是否有 CSV/XLSX
 0-2 个 cross-surface task，取决于是否天然跨文件类型
 0-1 个 skill task，取决于是否能抽象出通用 workflow
 ```
@@ -258,7 +269,7 @@ RAG + SQL + Skill
 每个答案必须对应至少一个 gold evidence：
 
 - RAG: file + span / chunk id；
-- SQL: executable SQL + expected rows；
+- Table: executable query（DuckDB SQL）+ expected rows；
 - Graph: graph path / edge list；
 - Skill: skill name + section。
 
@@ -267,8 +278,8 @@ RAG + SQL + Skill
 必须自动验证：
 
 - JSON schema 合法；
-- gold SQL 可执行；
-- SQL expected result 和 gold answer 一致；
+- gold query 可执行；
+- query expected result 和 gold answer 一致；
 - graph path 存在；
 - gold evidence 的 source file 存在；
 - required surfaces 和 gold evidence surfaces 一致；
@@ -320,7 +331,7 @@ Full release: 5-10%
 Source: Workspace-Bench-Lite 中 20 个任务
 Profiles: 覆盖 5 个 worker profiles，尽量均衡
 Atomic tasks: 100-150
-Surfaces: RAG + Graph + SQL
+Surfaces: RAG + Graph + Table
 Skills: 可选
 ```
 
@@ -328,7 +339,7 @@ Skills: 可选
 
 ```text
 RAG-only:        25-35
-SQL-only:        20-30
+Table-only:      20-30
 Graph-only:      20-30
 Cross-surface:   30-50
 Skill-only:       0-10
@@ -342,14 +353,14 @@ Skill-only:       0-10
 Source: Workspace-Bench-Lite 100 个任务
 Profiles: 5
 Atomic tasks: 500-800
-Core surfaces: RAG + Graph + SQL + Skills
+Core surfaces: RAG + Graph + Table + Skills
 ```
 
 目标分布：
 
 ```text
 RAG-only:        100-150
-SQL-only:         80-130
+Table-only:       80-130
 Graph-only:       80-130
 Skill-only:       40-80
 Cross-surface:   200-310
@@ -358,12 +369,12 @@ Cross-surface:   200-310
 Cross-surface 内部目标：
 
 ```text
-RAG + SQL:          60-100
+RAG + Table:        60-100
 RAG + Graph:        50-90
-SQL + Skill:        30-50
+Table + Skill:      30-50
 Graph + Skill:      20-40
-RAG + Graph + SQL:  40-70
-RAG + SQL + Skill:  20-40
+RAG + Graph + Table: 40-70
+RAG + Table + Skill: 20-40
 ```
 
 ### WorkSurface-Bench-Full
@@ -374,20 +385,20 @@ RAG + SQL + Skill:  20-40
 Source: Workspace-Bench Full 388 个任务
 Profiles: 5
 Atomic tasks: 2,000-3,000
-Core surfaces: RAG + Graph + SQL + Skills
+Core surfaces: RAG + Graph + Table + Skills
 ```
 
 目标分布：
 
 ```text
 RAG-only:         400-600
-SQL-only:         300-500
+Table-only:       300-500
 Graph-only:       300-500
 Skill-only:       150-300
 Cross-surface:    850-1,200
 ```
 
-如果某些 worker profile 的表格类文件较少，不强行补 SQL-only；保持 Workspace-Bench 原始分布优先，任务配额只作为目标，不作为硬约束。
+如果某些 worker profile 的表格类文件较少，不强行补 Table-only；保持 Workspace-Bench 原始分布优先，任务配额只作为目标，不作为硬约束。
 
 ## 数据 split
 
@@ -450,7 +461,7 @@ data/
 输出统计：
 
 - 每个 source task 的文件类型；
-- 可转 SQL 的文件数量；
+- 可转 Table 的文件数量；
 - 可转 RAG 的文件数量；
 - dependency graph 边数；
 - rubrics 数量；
@@ -458,11 +469,11 @@ data/
 
 ### Step 2: Canonical surface conversion
 
-先做 RAG + SQL + Graph：
+先做 RAG + Table + Graph：
 
 ```text
 documents -> kb_docs
-tables -> SQLite
+tables    -> tables/ (DuckDB view registry)
 file_dep_graph -> surface_graph
 ```
 
@@ -474,7 +485,7 @@ Skills 第二步再加，避免一开始引入答案泄漏。
 
 - 从 rubrics 中抽 atomic claims；
 - 从 dependency graph 中抽 route/evidence tasks；
-- 从表格字段生成 SQL verification tasks；
+- 从表格字段生成 table verification tasks；
 - 从跨文件类型依赖中生成 cross-surface tasks。
 
 ### Step 4: Verification and filtering
@@ -485,7 +496,7 @@ Skills 第二步再加，避免一开始引入答案泄漏。
 - 不需要多 surface 的伪 cross-surface 任务；
 - 只靠常识可答的任务；
 - 答案直接出现在问题中的任务；
-- SQL/Graph 无法程序验证的任务。
+- Table/Graph 无法程序验证的任务。
 
 ### Step 5: Manual audit and freeze
 

@@ -4,6 +4,17 @@ Written after inspecting Workspace-Bench-Lite (en split) as the intended
 source. These proposals target problems that surface only after looking at the
 actual data, not just the paper.
 
+## Decisions applied since v0 draft
+
+- **"SQL surface" renamed to "Table surface"** across README, schema,
+  examples, and Chinese docs. The tool set is `table_list` /
+  `table_describe` / `table_query` (DuckDB / pandas under the hood). We
+  explicitly do NOT position WorkSurface-Bench as an enterprise-SQL
+  benchmark (cf. BIRD, Spider). The routing decision — should the agent
+  compute over structured rows or read the sheet as prose — is what we
+  measure. See §1.1 below for the residual design decisions this rename
+  simplifies.
+
 ## TL;DR
 
 The current design assumes Workspace-Bench provides four ready-to-project
@@ -19,6 +30,11 @@ The proposals below are grouped by severity.
 ## 1. Structural gaps in the source data (must-fix)
 
 ### 1.1 There is no relational database in Workspace-Bench
+
+> Status: renaming to **Table surface** (see "Decisions applied") resolves
+> the framing issue. The design questions below still stand: what backend,
+> per-workbook vs consolidated, when to call something `table_only` vs.
+> route the sheet as prose to RAG.
 
 The paper counts 74 file types, but per-task inputs are typically 1-100
 heterogeneous files. Across the entire Lite-en split there are:
@@ -39,21 +55,27 @@ disjoint tiny tables with no foreign keys and no shared schema across tasks.
 That is not what a router should learn to pick, and it is not what real
 enterprise SQL looks like.
 
-**Proposal**: replace "SQL surface" with **"Structured surface"** and make the
-underlying store explicit. Two supported backends:
+**Proposal (revised after rename)**: keep the surface as **Table**, backed by
+per-workbook DuckDB views (one view per sheet, no cross-task union by
+default). Ship one core query tool:
 
-- **Sheet mode** (default): tables are exposed via `db_list_tables` /
-  `db_describe_table` but SQL is authored per task from the local workbook.
-  Golden evidence uses a small SQL over that single workbook, not a global
-  schema.
-- **Consolidated mode** (later): for a subset of tasks whose spreadsheets
-  share fields (e.g. per-month sales sheets), the converter unions them into
-  a single consolidated table. Only these tasks get "real" cross-sheet SQL.
+- `table_list(profile)` — list registered views for the profile
+- `table_describe(view)` — return columns, dtypes, first 3 rows
+- `table_query(view, sql)` — run DuckDB SQL against one view
 
-Do not label a task `sql_only` unless the answer genuinely requires an
+The previous v0 draft proposed two tracks ("cross-task consolidated" +
+"per-workbook mini-DB") to make the surface feel DB-like. With the
+Table-surface framing, only the per-workbook track is needed for Lite. The
+consolidated track becomes an **optional v0.2 extension** for tasks whose
+sheets genuinely share a fingerprint — call it out separately, don't force
+it into the core.
+
+Do not label a task `table_only` unless the answer genuinely requires an
 aggregation the model would not reliably do by re-reading the raw file. A
-`SELECT COUNT(*) WHERE variance < 0` over 8 rows is not diagnostic — the model
-can just count.
+`SELECT COUNT(*) WHERE variance < 0` over 8 rows is not diagnostic — the
+model can just count. Threshold candidates for "genuinely needs a query":
+row count > 30, groups > 5, or answer requires a numeric aggregate the
+question does not explicitly state.
 
 ### 1.2 The dependency graph is one hop deep
 
@@ -141,7 +163,7 @@ is over-specific — reject it.
 ### 2.1 Route scoring is trivially gameable
 
 If the router sees the surface list in the question phrasing ("How many rows
-have variance < 0" → obviously SQL), Route becomes a 4-way linear classifier
+have variance < 0" → obviously Table), Route becomes a 4-way linear classifier
 on cue words. That is not a benchmark; that is a probing task.
 
 **Proposal**: two changes.
@@ -151,7 +173,7 @@ on cue words. That is not a benchmark; that is a probing task.
   to the current inventory records, how many items are under-counted". The
   paraphrase is validated by an LLM verifying answer equivalence but not
   exposed to the routing agent.
-- **Distractor surfaces**: even a `rag_only` task has SQL tables loaded in
+- **Distractor surfaces**: even a `rag_only` task has table views loaded in
   the profile if the task's workspace happens to contain spreadsheets. The
   agent must decide not to touch them. Report a "Route precision" (surfaces
   chosen that were needed) alongside "Route recall" (needed surfaces that
