@@ -6,6 +6,9 @@ venv/
 env/
 data/raw/
 data/processed/
+data/workspace-bench-lite-en/
+data/workspace-bench-lite-cn/
+data/workspace-bench-full/
 outputs/
 results/
 *.sqlite
