@@ -6,6 +6,7 @@
 - [x] Decide that the main data source is Workspace-Bench-derived.
 - [x] Exclude memory from the core shared-enterprise benchmark.
 - [x] Add initial task schema and example JSONL format.
+- [x] Draft data construction plan and scale targets.
 
 ## Milestone 1: Workspace-Bench-Lite Conversion
 
@@ -50,4 +51,3 @@
 - [ ] Release derived task metadata where licensing allows.
 - [ ] Release baseline results.
 - [ ] Write the technical report.
-

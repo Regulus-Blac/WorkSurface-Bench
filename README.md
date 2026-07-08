@@ -97,6 +97,9 @@ Each task includes:
 See [`schemas/task.schema.json`](schemas/task.schema.json) and
 [`examples/tasks.example.jsonl`](examples/tasks.example.jsonl).
 
+The data construction plan and scale targets are documented in
+[`docs/data_construction_plan_zh.md`](docs/data_construction_plan_zh.md).
+
 ## Task Types
 
 WorkSurface-Bench decomposes workspace tasks into atomic diagnostic tasks:
@@ -182,4 +185,3 @@ No synthetic enterprise world as the main data source
 This repository currently contains the benchmark concept, initial schema, and
 example task format. Conversion scripts, runners, and scoring utilities will be
 added next.
-
