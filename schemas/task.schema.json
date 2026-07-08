@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/haolpku/WorkSurface-Bench/schemas/task.schema.json",
+  "title": "WorkSurface-Bench Task",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "source",
+    "question",
+    "task_type",
+    "required_surfaces",
+    "gold_tools",
+    "gold_answer",
+    "gold_evidence"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique WorkSurface task id."
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["benchmark", "task_id"],
+      "properties": {
+        "benchmark": {
+          "type": "string",
+          "description": "Source benchmark, e.g. Workspace-Bench-Lite."
+        },
+        "task_id": {
+          "type": ["string", "integer"],
+          "description": "Source workspace task id."
+        },
+        "persona": {
+          "type": "string"
+        },
+        "rubric_refs": {
+          "type": "array",
+          "items": {
+            "type": ["string", "integer"]
+          }
+        }
+      }
+    },
+    "question": {
+      "type": "string"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["easy", "medium", "hard", "unknown"],
+      "default": "unknown"
+    },
+    "task_type": {
+      "type": "string",
+      "enum": [
+        "rag_only",
+        "sql_only",
+        "graph_only",
+        "skill_only",
+        "cross_surface"
+      ]
+    },
+    "required_surfaces": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["rag", "graph", "sql", "skill"]
+      }
+    },
+    "gold_tools": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "examples": ["kb_search", "graph_traverse", "db_query_sql", "skill_get"]
+      }
+    },
+    "gold_answer": {
+      "description": "Canonical answer. May be a string, number, boolean, object, or list.",
+      "oneOf": [
+        {"type": "string"},
+        {"type": "number"},
+        {"type": "boolean"},
+        {"type": "array"},
+        {"type": "object"}
+      ]
+    },
+    "answer_type": {
+      "type": "string",
+      "enum": ["string", "number", "boolean", "list", "table", "json", "freeform"],
+      "default": "string"
+    },
+    "gold_evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["surface"],
+        "properties": {
+          "surface": {
+            "type": "string",
+            "enum": ["rag", "graph", "sql", "skill"]
+          },
+          "file": {
+            "type": "string"
+          },
+          "span": {
+            "type": "string"
+          },
+          "table": {
+            "type": "string"
+          },
+          "columns": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "sql": {
+            "type": "string"
+          },
+          "graph_path": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "skill": {
+            "type": "string"
+          },
+          "claim": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}
+
