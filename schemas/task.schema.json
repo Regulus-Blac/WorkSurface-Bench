@@ -57,7 +57,6 @@
         "rag_only",
         "table_only",
         "graph_only",
-        "skill_only",
         "cross_surface"
       ]
     },
@@ -67,15 +66,20 @@
       "uniqueItems": true,
       "items": {
         "type": "string",
-        "enum": ["rag", "graph", "table", "skill"]
+        "enum": ["rag", "graph", "table"]
       }
     },
     "gold_tools": {
       "type": "array",
       "items": {
         "type": "string",
-        "examples": ["kb_search", "graph_traverse", "table_query", "skill_get"]
+        "examples": ["kb_search", "graph_traverse", "table_query"]
       }
+    },
+    "applicable_skills": {
+      "type": "array",
+      "description": "SOP-like skill hints attached as task metadata (v0.1). Not part of Route scoring; the agent may consult them.",
+      "items": {"type": "string"}
     },
     "gold_answer": {
       "description": "Canonical answer. May be a string, number, boolean, object, or list.",
@@ -102,7 +106,7 @@
         "properties": {
           "surface": {
             "type": "string",
-            "enum": ["rag", "graph", "table", "skill"]
+            "enum": ["rag", "graph", "table"]
           },
           "file": {
             "type": "string"
@@ -124,9 +128,6 @@
           "graph_path": {
             "type": "array",
             "items": {"type": "string"}
-          },
-          "skill": {
-            "type": "string"
           },
           "claim": {
             "type": "string"

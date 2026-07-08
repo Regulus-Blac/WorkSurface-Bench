@@ -176,3 +176,12 @@ publicly first (workshop or arXiv) so we can iterate.
 - **Memory is not a core surface** (from original design; carried forward).
 - **Workspace-Bench-Lite English split is the pilot data source**
   (2026-07-09) — 249 MB downloaded locally, 100 tasks, gitignored.
+- **Q1: Skill demoted to task metadata for v0.1** (2026-07-09) — routable
+  surfaces are `{rag, graph, table}` only. Skills attached as
+  `applicable_skills` on each task. Revisit after leak-check on Full
+  yields ≥ 20 clean skills.
+- **Q2: Lite v0.1 = English only** (2026-07-09) — bilingual deferred to
+  Full or v0.2.
+- **Q3: Agent is read-only on the profile** (2026-07-09) — atomic tasks
+  return an answer + evidence; no output-file production. Enables clean
+  Route/Evidence/Answer decomposition and closes safety threat 4.
