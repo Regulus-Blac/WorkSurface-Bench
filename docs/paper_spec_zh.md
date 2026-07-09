@@ -22,6 +22,15 @@ spec、experiment matrix。Pilot 完成后所有具体数字回填。
 - Skill 作 `applicable_skills` 元数据，非路由
 - 产物：`data/worksurface_lite/`（HF dataset）+ `schemas/task.schema.json`
 
+**一句话总结（可放 Introduction 首段结尾）**：
+
+> WorkSurface-Bench evaluates each question independently against a
+> persona-scoped workspace projected onto three canonical surfaces —
+> a knowledge base, a table registry, and a dependency graph — plus a
+> shared SOP library. We score two capabilities separately: whether the
+> agent selected the right surfaces (Route) and whether the final
+> answer is correct (Answer).
+
 **定位（基于 2026-07 related work 调研，见 `related_work_zh.md`）**：
 第一个把四种类别上不同的知识面（unstructured docs / file dependency
 graph / DuckDB-queryable tables / procedural SOPs）放在同一个企业
@@ -32,13 +41,29 @@ workspace 上评测的 benchmark。相邻工作分两类：**融合 surface 但�
 
 **§2 数据字段一一对应。审稿人问"到底有什么"看 §2。**
 
-### C2. 一条从 Workspace-Bench 派生的 pipeline，不合成、不混外部
+### C2. 一条从 Workspace-Bench 派生的 pipeline，不额外合成、不混外部
 
 - 输入：Workspace-Bench-Lite 的 100 源任务
 - 输出：三个 canonical surface + atomic tasks + 溯源
 - 关键设计：**不做**跨任务事实表合成，**不**引入 RAGBench/BIRD/STaRK
 - 产物：`scripts/convert_*.py`（每个 surface 一个）+ `data/wsb_lock.json`
   （commit hash + 所有输入 sha256）
+
+**Provenance disclaimer**（论文 Method 章节必写）：
+
+> WorkSurface-Bench inherits Workspace-Bench's hybrid data-construction
+> pipeline: **task scenarios and dependency graphs are human-authored
+> and expert-validated** from real Lark/ByteDance workflows, while
+> **file contents combine public web resources** (arXiv papers, GitHub
+> repositories, official reports) **with LLM-generated artifacts
+> grounded in the collected files**. Our Route / Evidence / Answer
+> decomposition operates on the same artifacts regardless of
+> provenance, and our contamination hygiene protocol (§C5) treats
+> LLM-generated content as potentially memorized by evaluated models.
+
+我们不宣称"real enterprise data"；宣称"enterprise-scenario-grounded
+hybrid data with human-authored task/rubric/graph annotations"。
+详见 [`wsb_data_provenance.md`](wsb_data_provenance.md)。
 
 **回答"你的数据从哪来"。审稿人看这一条判断诚实度。**
 

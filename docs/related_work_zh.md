@@ -24,6 +24,10 @@ matrix 里）
 
 - arXiv 2605.03596，SJTU + Feishu/Lark，2026-05
 - 388 tasks, 20k files, 7,399 rubrics
+- **数据 provenance**：hybrid pipeline——任务场景来自 154 个真实
+  Lark/ByteDance workflow，25 名 human annotator 手工写任务描述、
+  依赖图、rubrics；file artifacts 是公开互联网爬取 (arXiv/GitHub)
+  + LLM 合成 (grounded)。详见 [`wsb_data_provenance.md`](wsb_data_provenance.md)。
 - **差异**：WSB 评"能不能产出交付物 (end-to-end)"；我们评"能不能
   路由到正确 surface (decomposed)"。WSB 的 file_dep_graph 只有一跳；
   我们做了增强。
