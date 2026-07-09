@@ -202,6 +202,43 @@ Pilot 完成后回填的三张统计表：
 
 ## 3. Experiment matrix
 
+### 3.0 版面预算（NeurIPS D&B 9 页正文）
+
+正文锁定 **5 tables + 3 figures**，其余进 Appendix。粗算占版面：
+Table + Figure 合计 ~2.7 页，剩 ~6.3 页正文（Intro / Related /
+Method / Experiments / Conclusion）。
+
+**正文清单**：
+
+| # | 内容 | 服务的 Claim | 大致版面 |
+| --- | --- | --- | --- |
+| Table 1 | Prior benchmark comparison matrix（15 行 × 6 列） | C1 定位 | ~1/2 页 |
+| Table 2 | Dataset statistics（15 行 × 1 列纵向） | C1 规模 | ~1/6 页 |
+| Table 3 | Main results — 5 setting × 5 model × 5 sub-score | C4 心脏 | ~1/2 页 |
+| Table 4 | Per-surface breakdown（25 行 × 4 列） | C4 支撑 | ~1/3 页 |
+| Table 5 | Failure mode taxonomy（7 行 × 4 列） | C4 分析 | ~1/4 页 |
+| Figure 1 | Teaser — 左 WSB / 右 WSF 对比 | Section 1 | ~1/3 页 |
+| Figure 2 | Framework overview — pipeline | Section 3 | ~1/3 页 |
+| Figure 3 | Main finding 三小图（scatter / gap / lines） | C4 视觉证据 | ~1/2 页 |
+
+**Appendix 清单**（不受版面限制）：
+
+- A1: Rubric-to-task conversion stats
+- A2: Surface eligibility gates（Table / Graph / Skill 三个 go/no-go 数字）
+- A3: Inter-annotator agreement（Cohen κ）
+- A4: Full ablation matrix（A1 distractor / A2 recall-only / A3 exact-match / A4 wallclock / A5 sonnet-judge）
+- A5: Contamination probe results
+- A6: Judge model agreement (opus vs sonnet)
+- A7: Skill-metadata ablation
+- A8: Baseline harness details（每个 setting 的完整 tool set + prompt）
+- A9: Per-persona breakdown
+- A10: Cost breakdown per model per run
+- A11: Route confusion matrix
+
+**Pilot 必须为每个 table/figure 准备数据 pipeline**——按完整方案
+（正文 + Appendix 全部）产出 result JSON，正文版面砍是最后一步，
+不影响数据 pipeline。
+
 ### 3.1 参与评测的 agent 设定
 
 5 个，按代码复杂度递增：
@@ -222,10 +259,9 @@ Pilot 完成后回填的三张统计表：
 - Gemini 3.1 Pro
 - Kimi-K2.5 或 Qwen-3.6（开源代表）
 
-**5 setting × 5 model = 25 runs on Lite**。按每 model 每 run
-~$40-64 (improvements §5) 估算总花费 ~$1500。
+**5 setting × 5 model = 25 runs on Lite**。成本估算见 §3.7。
 
-### 3.2 主表 Table 1（论文核心）
+### 3.2 Table 3：Main results（论文核心）
 
 | Agent | Model | Route F1 | Evidence | Answer | Efficiency | Aggregate |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -236,10 +272,12 @@ Pilot 完成后回填的三张统计表：
 | S5 Oracle-route | Opus 4.7 | 1.00 | 0.XX | 0.XX | – | 0.XX |
 | ... 其他 4 个 model 同结构 |
 
-**行的顺序想让审稿人看到**：从上到下 Answer 逐渐上升，但 Route F1
-**不是** 单调。这就是 §3.3 的伏笔。
+- 25 行 × 7 列 = 175 数字
+- 每个数字加 std（3 seed 平均）
+- 每列非 Oracle 最高值加粗
+- **审稿人一眼看**：Answer 单调上升 vs Route F1 非单调 → C4 主 finding
 
-### 3.3 主 Finding：Figure 3（三小图组合）
+### 3.3 Figure 3：Main finding 三小图
 
 - **3(a) Route-Answer 散点图**  
   横轴 Route F1，纵轴 Answer。每个点是 (model, task_type) bucket
@@ -251,9 +289,43 @@ Pilot 完成后回填的三张统计表：
   x：4 个 task_type；y：Answer；每个 model 一条线。**目标：cross-
   surface 比单面 task 低 20-40 points**。
 
-### 3.4 Ablation（Table 3）
+### 3.4 Table 4：Per-surface breakdown
 
-回答"§3 结果是不是评测协议本身造出来的"：
+Same 5 model × 5 setting × 4 task type breakdown：
+
+| Setting × Model | rag_only | table_only | graph_only | cross_surface |
+| --- | --- | --- | --- | --- |
+| 25 行 × 4 列，每 cell 是 Answer accuracy |
+
+回答"cross-surface 具体降多少"，同时是 Figure 3(c) 的表格版。
+
+### 3.5 Table 5：Failure mode taxonomy
+
+从 S4-ReAct+Opus 4.7 的 error case 抽样 100 条手工分类：
+
+| Failure category | Count | Fraction | Example |
+| --- | --- | --- | --- |
+| Wrong surface selected | X | Y% | task_089: chose kb_search when needed table_query |
+| Right surface, wrong file/table | X | Y% | ... |
+| Right file, wrong compute | X | Y% | ... |
+| Right compute, wrong extraction | X | Y% | ... |
+| Format / normalization mismatch | X | Y% | ... |
+| Abstain when should answer | X | Y% | ... |
+| Answer when should abstain | X | Y% | ... |
+
+**预期 wrong-surface 占 40-60%** → 支撑 C4 「路由是独立缺口」。
+
+### 3.6 Table 1：Prior benchmark comparison matrix（Related Work）
+
+15 行 × 6 列，见 `related_work_zh.md` §2 完整版本。只有我们最后一行
+四列（Surfaces=4 / Route metric=✓ / Enterprise source=✓ / Skill=✓）
+全打勾。
+
+### 3.7 Table 2：Dataset statistics
+
+单栏纵向表，pilot 后回填。
+
+### 3.8 Ablation（Appendix Table A4，正文一段话 report）
 
 | Ablation | 变化 | 期望效果 |
 | --- | --- | --- |
@@ -263,26 +335,20 @@ Pilot 完成后回填的三张统计表：
 | A4. Efficiency 换成 wallclock 而非 token | | 排序保持稳定说明预算合理 |
 | A5. Judge 换 sonnet-4-6 | 替代 opus judge | 与 opus judge Spearman ρ ≥ 0.95 → 便宜 judge 可用 |
 
-### 3.5 Analysis（论文 Section 4）
+正文只报关键 delta，完整表进 Appendix A4。
 
-三个子问题，每个一个小图或 side-table：
+### 3.9 Analysis（论文 Section 5.4，靠 Table 5 + 两段文字）
 
-- **Q: cross-surface 到底难在哪？** → S4-ReAct 的 error trace 分类：
-  wrong-surface / right-surface-wrong-file / right-file-wrong-compute。
-  **预期：wrong-surface 占 40-60%**。
-- **Q: Skill metadata 有没有用？** → 相同 S4 model，一次 prompt 里
-  暴露 `applicable_skills`，一次不暴露。**如果 Answer 差 < 2 points →
-  验证 Q1=B (Skill 降级) 的决定合理**。
-- **Q: 污染 probe 结果？** → 5 model 的 closed-book Answer。
-  **预期：Opus/Sonnet closed-book ≤ 10%（正常），若某 model > 20%
-  就打旗**。
+- **Q1: cross-surface 到底难在哪？** → Table 5 分类回答
+- **Q2: Skill metadata 有没有用？** → 靠 Appendix A7 数据，正文一段话
+- **Q3: 污染 probe 结果？** → 靠 Appendix A5 数据，正文一句话
 
-### 3.6 Fallback plan（如果 pilot 打脸）
+### 3.10 Fallback plan（如果 pilot 打脸）
 
 | Pilot 观察 | 论文调整 |
 | --- | --- |
-| Route-Answer ρ > 0.85 | 主线换成 §3.5 Q1（cross-surface 难在哪的错误分类），Table 1 保留但不做核心图 |
-| Table coverage < 30% | 砍 Table，改 2-surface 论文（RAG + Graph），标题去掉 "multi-surface" |
+| Route-Answer ρ > 0.85 | 主线换成 Q1（cross-surface 难在哪的错误分类），Table 3 保留但不做 Figure 3(a) |
+| Table coverage < 30% | 砍 Table surface，改 2-surface 论文（RAG + Graph），标题去掉 "multi-surface" |
 | Graph edge density 中位数 < 5 | 砍 Graph，改 RAG + Table，重心放在 abstain / cross-profile |
 | Oracle-Naive gap < 10 points | 主图换成 Figure 3(c) 的 per-surface breakdown |
 
@@ -291,6 +357,68 @@ TheAgentCompany 团队**可能扩展工作把路由推到 knowledge-surface 粒�
 调研确认目前没有这样的 concurrent work，但相邻团队都有能力做。
 **触发条件 = arXiv 预印被拖到 2027-01 之后**。应对：Timeline 2026-11
 末 arXiv 挂预印，抢占位置。
+
+### 3.11 Cost estimate（run all experiments）
+
+假设 Lite = 700 atomic tasks（最终数量）。
+
+**Per-task token cost 估算**（S4-ReAct 是 upper bound）：
+
+| Setting | avg input tokens | avg output tokens | notes |
+| --- | --- | --- | --- |
+| S1 No-tool | 500 | 300 | 只 prompt |
+| S2 Always-RAG | 4,000 | 500 | 3-5 chunk 加入 context |
+| S3 Naive-router | 4,500 | 600 | 分类 + 单面查 |
+| S4 ReAct-all | 25,000 | 3,000 | ReAct loop 3-8 步，含 tool 返回 |
+| S5 Oracle-route | 8,000 | 800 | 用 gold surface 查一次 |
+
+**Per-run token cost (700 task × avg over 5 setting)**：
+- avg input ≈ 8,400 tokens/task × 700 = **5.9M input tokens**
+- avg output ≈ 1,040 tokens/task × 700 = **0.73M output tokens**
+
+**Per-model per-full-run 美元估算**（1M input / 1M output pricing）：
+
+| Model | $/1M in | $/1M out | 5 setting × 700 task cost |
+| --- | --- | --- | --- |
+| Claude Opus 4.7 | $15 | $75 | 5.9M × 15 + 0.73M × 75 = **$143** |
+| Claude Sonnet 4.6 | $3 | $15 | **$29** |
+| GPT-5 | $10 | $30 | **$81** |
+| Gemini 3.1 Pro | $7 | $21 | **$56** |
+| Kimi-K2.5 (open) | ~$1 | ~$3 | **$8** |
+
+**Judge cost**（Opus judge，每 task 约 3 rubric × 5 setting × 5 model
+= 75 judge calls，avg 1k input + 200 output）：
+- 700 task × 75 = 52,500 judge calls
+- ≈ 52.5M input + 10.5M output
+- **Judge = $52.5M × 15 + 10.5M × 75 = $1,575**  ← 最大头
+
+**闭卷 probe + graph enrichment LLM 调用**（估算 ~$100 总额）。
+
+### **总成本估算**
+
+| 项目 | 成本 |
+| --- | --- |
+| 5 model × 5 setting 主实验 | $317 |
+| Judge (Opus 4.7) | $1,575 |
+| Contamination probe + graph enrichment | $100 |
+| Ablation（跑 A5 sonnet-judge，A1/A2/A3/A4 靠重算，不重跑） | $315（判分再跑一次） |
+| 3 seed 重复（只对 3 个 model 重复以省钱） | $190 |
+| **小计** | **~$2,500** |
+| 缓冲（bug、失败重跑、pilot 阶段浪费） | +$500 |
+| **总预算** | **~$3,000** |
+
+**降本手段（如果 $3k 卡预算）**：
+- Judge 换 Sonnet 4.6：$1,575 → $315，**省 $1,260**。
+  Ablation A5 就是验证这个可行的
+- 3 seed 只对 top 2 model 做：$190 → $80
+- 砍到 3 model × 5 setting（Opus / GPT-5 / Kimi）：$317 → $232
+- **最激进的降本预算：~$1,200**
+
+**推荐**：
+- Pilot（前 4 周）用 **$300 预算**，跑 Sonnet 4.6 上 5 setting × 50 task
+  的 sanity check，主要花在 judge 校准
+- Main run（第 5-6 周）：**$2,500 完整 5 model × 5 setting × 700 task**
+- **总 $2,800，留 $200 buffer**
 
 ---
 
