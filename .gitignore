@@ -1,16 +1,66 @@
+# OS and editor metadata
 .DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local agent state
+.claude/
+.wolf/
+CLAUDE.md
+NEXT_SESSION.md
+
+# Python environments and caches
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 .venv/
 venv/
 env/
-data/raw/
-data/processed/
-data/workspace-bench-lite-en/
-data/workspace-bench-lite-cn/
-data/workspace-bench-full/
+build/
+dist/
+*.egg-info/
+
+# Credentials and machine-local configuration
+.env
+.env.*
+!.env.example
+
+# Downloaded and derived benchmark data (released on Hugging Face)
+data/**
+!data/wsb_lock.json
+output/
 outputs/
-results/
+
+# Model trajectories and temporary reruns
+runs/
+runs_*/
+tmp/
+
+# Generated analysis artifacts; keep the reproducibility scripts
+results/**
+!results/*.py
+
+# Local databases and logs
 *.sqlite
 *.db
+*.log
 
+# Paper build artifacts; retain source figures and editable assets
+paper_arr/build/
+paper_arr/qa/
+paper_arr/releases/
+paper_arr/*.aux
+paper_arr/*.bbl
+paper_arr/*.blg
+paper_arr/*.fdb_latexmk
+paper_arr/*.fls
+paper_arr/*.log
+paper_arr/*.out
+paper_arr/*.pdfsync
+paper_arr/main.pdf
+paper_arr/*.inspect.ndjson

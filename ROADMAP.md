@@ -1,53 +1,21 @@
 # Roadmap
 
-## Milestone 0: Concept and Schema
+## v1.0 — Completed
 
-- [x] Define benchmark name and scope.
-- [x] Decide that the main data source is Workspace-Bench-derived.
-- [x] Exclude memory from the core shared-enterprise benchmark.
-- [x] Add initial task schema and example JSONL format.
-- [x] Draft data construction plan and scale targets.
+- [x] Project 100 Workspace-Bench-Lite source tasks into RAG, Table, and Graph surfaces.
+- [x] Construct and freeze 1,151 atomic tasks with executable or traceable gold evidence.
+- [x] Implement Route, Evidence, Answer, Efficiency, Safety, and Aggregate scoring.
+- [x] Implement S1–S5 agent settings and OpenAI-compatible model adapters.
+- [x] Complete 4 models × 5 settings × 1,151 tasks with zero retained protocol errors.
+- [x] Audit a stratified 200-task sample with three independent annotators.
+- [x] Release tasks, canonical resources, trajectories, scores, and audit votes on Hugging Face.
+- [x] Release construction, evaluation, analysis, and paper-generation code.
 
-## Milestone 1: Workspace-Bench-Lite Conversion
+## Planned extensions
 
-- [ ] Download or link Workspace-Bench-Lite.
-- [ ] Inspect `data_manifest`, `file_dep_graph`, rubrics, and output files.
-- [ ] Implement file-type routing:
-  - documents to `kb_docs/`;
-  - CSV/XLSX to per-task table registry (DuckDB views over raw files);
-  - dependency graph to `surface_graph.json`;
-  - rubrics/workflows to skills.
-- [ ] Produce the first canonical profile.
-
-## Milestone 2: Task Derivation
-
-- [ ] Convert rubrics into atomic QA tasks.
-- [ ] Convert dependency graph entries into routing/evidence tasks.
-- [ ] Generate cross-surface tasks for RAG + Table, Graph + RAG, Table + Skill,
-      and RAG + Graph + Table.
-- [ ] Manually audit the first 100 derived tasks.
-
-## Milestone 3: Runner and Scoring
-
-- [ ] Implement an agent runner with tool trace logging.
-- [ ] Implement route scorer.
-- [ ] Implement evidence scorer.
-- [ ] Implement answer scorer.
-- [ ] Implement aggregate reporting.
-
-## Milestone 4: Baselines
-
-- [ ] No-tool LLM.
-- [ ] Always-RAG.
-- [ ] Naive router.
-- [ ] ReAct all-tools.
-- [ ] Oracle route.
-- [ ] DataMind-style agent.
-
-## Milestone 5: WorkSurface-Bench-Lite Release
-
-- [ ] Release schema.
-- [ ] Release conversion scripts.
-- [ ] Release derived task metadata where licensing allows.
-- [ ] Release baseline results.
-- [ ] Write the technical report.
+- [ ] Add source-task cluster bootstrap confidence intervals.
+- [ ] Add open-weight and dedicated routing baselines.
+- [ ] Repeat stochastic agent settings on a stratified subset.
+- [ ] Expand underrepresented persona and three-surface task combinations.
+- [ ] Introduce held-out source workspaces for learned-router evaluation.
+- [ ] Extend safety-threat annotations beyond the benign v1.0 release.

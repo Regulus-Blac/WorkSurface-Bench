@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "worksurface-bench"
+version = "1.0.0"
+description = "Benchmarking enterprise agents on multi-surface knowledge routing"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [
+  {name = "Hao Liang", email = "hao.liang@stu.pku.edu.cn"},
+]
+dependencies = [
+  "duckdb>=1.0",
+  "huggingface-hub>=0.24",
+  "jsonschema>=4.18",
+  "matplotlib>=3.7",
+  "numpy>=1.24",
+  "openpyxl>=3.1",
+  "pandas>=2.0",
+  "pyarrow>=14",
+  "scipy>=1.10",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.urls]
+Homepage = "https://github.com/haolpku/WorkSurface-Bench"
+Dataset = "https://huggingface.co/datasets/lhpku20010120/WorkSurface-Bench"
+
+[tool.setuptools]
+packages = ["worksurface", "runner", "scoring", "paper"]
+
+[tool.pytest.ini_options]
+testpaths = ["scoring", "runner"]
+python_files = ["test_*.py"]
+addopts = "-q"

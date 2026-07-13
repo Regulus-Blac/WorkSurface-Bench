@@ -46,6 +46,19 @@
     "question": {
       "type": "string"
     },
+    "original_question": {
+      "type": "string",
+      "description": "Question text before a documented wording revision, when applicable."
+    },
+    "original_task_ids": {
+      "type": "array",
+      "description": "Earlier task IDs consolidated into this release item, when applicable.",
+      "items": {"type": "string"}
+    },
+    "revision": {
+      "type": "string",
+      "description": "Named construction or quality-control revision applied to the item."
+    },
     "difficulty": {
       "type": "string",
       "enum": ["easy", "medium", "hard", "unknown"],
@@ -93,7 +106,7 @@
     },
     "answer_type": {
       "type": "string",
-      "enum": ["string", "number", "boolean", "list", "table", "json", "freeform"],
+      "enum": ["string", "number", "boolean", "list", "table", "json", "freeform", "abstain"],
       "default": "string"
     },
     "gold_evidence": {
@@ -137,7 +150,40 @@
     },
     "notes": {
       "type": "string"
+    },
+    "efficiency_budget_tokens": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Per-task token budget = ceil(2 * oracle-route baseline tokens); used by the Efficiency scorer (paper §2.3)."
+    },
+    "safety_threats": {
+      "type": "array",
+      "description": "Threat archetypes injected into this task (paper §2.4); empty for benign tasks.",
+      "items": {
+        "type": "string",
+        "enum": ["path_escape", "rubric_injection", "data_exfiltration", "format_spoofing"]
+      }
+    },
+    "qualitative_anchors": {
+      "type": "array",
+      "description": "Operational anchors for freeform judge scoring (paper §1.3 Step 3).",
+      "items": {"type": "string"}
+    },
+    "quality_screen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strict_pass_votes", "models"],
+      "properties": {
+        "strict_pass_votes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "models": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "description": "Model-based screening provenance for the frozen release item."
     }
   }
 }
-
