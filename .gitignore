@@ -50,17 +50,5 @@ results/**
 *.db
 *.log
 
-# Paper build artifacts; retain source figures and editable assets
-paper_arr/build/
-paper_arr/qa/
-paper_arr/releases/
-paper_arr/*.aux
-paper_arr/*.bbl
-paper_arr/*.blg
-paper_arr/*.fdb_latexmk
-paper_arr/*.fls
-paper_arr/*.log
-paper_arr/*.out
-paper_arr/*.pdfsync
-paper_arr/main.pdf
-paper_arr/*.inspect.ndjson
+# Paper source and build artifacts are maintained locally, not on GitHub.
+paper_arr/

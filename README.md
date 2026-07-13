@@ -15,17 +15,24 @@ dependency graphs—before measuring evidence acquisition and answer correctness
 Dataset and official trajectories:
 [Hugging Face](https://huggingface.co/datasets/lhpku20010120/WorkSurface-Bench).
 
+![WorkSurface-Bench overview](assets/figures/overview.png)
+
+An agent first decides which knowledge surfaces are required, then acquires
+evidence and produces an answer. WorkSurface-Bench evaluates these stages
+separately, making routing failures distinguishable from evidence-acquisition
+and answer-synthesis failures.
+
 ## Repository structure
 
 ```text
 worksurface/   Surface construction, task derivation, quality control
 scoring/       Route, Evidence, Answer, Efficiency, and Safety scorers
 runner/        Tool environment and S1–S5 agent harness
-paper/         Scripts that regenerate paper tables and figures
+paper/         Scripts that regenerate result tables and figures
 results/       Analysis and release-construction scripts (generated files ignored)
 scripts/       Source download, provenance lock, budgets, HF release builder
 schemas/       JSON Schema for benchmark tasks
-paper_arr/     Single-file paper source and figure assets
+assets/        Figures used in this README
 docs/          Design, provenance, and construction notes
 ```
 
@@ -55,6 +62,17 @@ export WSB_API_KEY="..."
 
 The clients use an OpenAI-compatible chat-completions interface. Model IDs are
 passed through unchanged to the configured provider.
+
+## Benchmark construction
+
+![Benchmark construction pipeline](assets/figures/construction_pipeline.png)
+
+Workspace files are converted into canonical document, table, and dependency-
+graph surfaces. Candidate tasks are derived with explicit gold evidence and
+surface requirements, then pass deterministic validation, multi-model
+screening, and human evaluation before release. The final benchmark contains
+1,151 tasks selected for answerability, correctness, naturalness, and genuine
+surface necessity rather than for uniform quotas.
 
 ## Get the benchmark data
 
@@ -116,6 +134,22 @@ the tools → trace → scorer path without an API key.
 
 S5 is a control condition rather than a deployable baseline: tool execution,
 evidence acquisition, and answer synthesis remain model-controlled.
+
+## Results at a glance
+
+![Routing and answer results](assets/figures/routing_answer_results.png)
+
+Routing quality and answer accuracy are positively related but not equivalent.
+Gold-surface guidance produces near-ceiling routing for several backbones, yet
+answer gains remain smaller because the model must still retrieve the right
+evidence, execute the required operations, and synthesize the final response.
+
+![Dataset distributions](assets/figures/dataset_distributions.png)
+
+The released distribution reflects the availability of verifiable operations
+in the source workspaces. Cross-surface tasks are the largest group, while
+three-surface tasks remain intentionally limited because all three surfaces
+must be independently necessary for the answer.
 
 ## Scoring
 
