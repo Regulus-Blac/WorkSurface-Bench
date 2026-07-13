@@ -78,11 +78,13 @@ trajectory for every task × model × setting cell: 4 × 5 × 1,151 = 23,020.
 
 ```bash
 python -m runner.make_tables --runs runs --out runs/tables
-python -m paper.build_paper_results --help
+python results/build_final1151_figures.py
+python results/plot_figure3.py
+python results/plot_figure4.py
 ```
 
 The scorer reports Route precision/recall/F1, Evidence, Answer, Efficiency,
-Safety where applicable, and the weighted Aggregate. Paper-generation scripts
+Safety where applicable, and the weighted Aggregate. The analysis scripts
 consume scored JSON reports rather than manually entered values.
 
 ## 6. Build the Hugging Face release

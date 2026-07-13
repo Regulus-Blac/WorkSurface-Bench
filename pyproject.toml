@@ -32,7 +32,7 @@ Homepage = "https://github.com/haolpku/WorkSurface-Bench"
 Dataset = "https://huggingface.co/datasets/lhpku20010120/WorkSurface-Bench"
 
 [tool.setuptools]
-packages = ["worksurface", "runner", "scoring", "paper"]
+packages = ["worksurface", "runner", "scoring"]
 
 [tool.pytest.ini_options]
 testpaths = ["scoring", "runner"]

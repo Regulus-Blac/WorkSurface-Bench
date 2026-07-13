@@ -28,12 +28,11 @@ and answer-synthesis failures.
 worksurface/   Surface construction, task derivation, quality control
 scoring/       Route, Evidence, Answer, Efficiency, and Safety scorers
 runner/        Tool environment and S1–S5 agent harness
-paper/         Scripts that regenerate result tables and figures
 results/       Analysis and release-construction scripts (generated files ignored)
 scripts/       Source download, provenance lock, budgets, HF release builder
 schemas/       JSON Schema for benchmark tasks
 assets/        Figures used in this README
-docs/          Design, provenance, and construction notes
+docs/          Public data-provenance documentation
 ```
 
 Downloaded source workspaces, canonical surfaces, model trajectories, audit
