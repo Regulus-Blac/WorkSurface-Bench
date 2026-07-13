@@ -7,7 +7,7 @@ QA := qa
 
 all: $(OUTPUT)/$(PAPER).pdf
 
-$(OUTPUT)/$(PAPER).pdf: main.tex custom.bib figure1_teaser_polished.pdf figure2_pipeline.pdf figure3.png figure4_distribution.png
+$(OUTPUT)/$(PAPER).pdf: main.tex custom.bib figure1_teaser_polished.pdf figure2_pipeline.pdf figure3.pdf figure4_distribution.pdf
 	mkdir -p $(BUILD) $(OUTPUT)
 	TEXINPUTS=styles:.: pdflatex -interaction=nonstopmode -halt-on-error -output-directory=$(BUILD) main.tex
 	cd $(BUILD) && BIBINPUTS=..: BSTINPUTS=../styles: bibtex main

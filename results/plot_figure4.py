@@ -78,4 +78,6 @@ ax[3].set_title("(d) Derivation path")
 
 plt.savefig(os.path.join(os.path.dirname(__file__), "figure4_distribution.png"),
             dpi=300, bbox_inches="tight", facecolor="white")
-print("wrote figure4_distribution.png")
+plt.savefig(os.path.join(os.path.dirname(__file__), "figure4_distribution.pdf"),
+            bbox_inches="tight", facecolor="white")
+print("wrote figure4_distribution.png and figure4_distribution.pdf")

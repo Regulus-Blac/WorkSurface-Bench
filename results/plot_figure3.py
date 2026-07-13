@@ -80,4 +80,6 @@ for axis in ax:
 
 out = os.path.join(HERE, "figure3.png")
 plt.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
-print(f"wrote {out}")
+pdf_out = os.path.join(HERE, "figure3.pdf")
+plt.savefig(pdf_out, bbox_inches="tight", facecolor="white")
+print(f"wrote {out} and {pdf_out}")
