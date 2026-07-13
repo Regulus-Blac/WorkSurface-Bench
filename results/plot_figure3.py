@@ -69,7 +69,8 @@ for setting in ("S2", "S3", "S4", "S5"):
         ax[2].plot(surface_labels, vals, marker=MARKERS[setting], markersize=5,
                    linewidth=1.8, linestyle=styles[setting], color=COLORS[setting],
                    label=LABELS[setting])
-ax[2].set(ylabel="Answer score", title="(c) Answer by task type", ylim=(0, 0.75))
+ax[2].set(ylabel="Answer score", title="(c) Answer by task type", ylim=(0, 1.0))
+ax[2].margins(x=0.04)
 ax[2].legend(loc="upper left", frameon=False)
 
 for axis in ax:
