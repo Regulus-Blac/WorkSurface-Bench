@@ -14,6 +14,8 @@ dependency graphs—before measuring evidence acquisition and answer correctness
 
 Dataset and official trajectories:
 [Hugging Face](https://huggingface.co/datasets/lhpku20010120/WorkSurface-Bench).
+Project page:
+[haolpku.github.io/WorkSurface-Bench](https://haolpku.github.io/WorkSurface-Bench/).
 
 ![WorkSurface-Bench overview](assets/figures/overview.png)
 
