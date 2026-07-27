@@ -64,6 +64,35 @@ export WSB_API_KEY="..."
 The clients use an OpenAI-compatible chat-completions interface. Model IDs are
 passed through unchanged to the configured provider.
 
+### Off-the-shelf Claude Agent SDK baseline
+
+The repository also includes an optional production-agent baseline built on
+the Claude Agent SDK. It exposes exactly the same task-scoped RAG, table, and
+dependency-graph tools used by the controlled settings. Built-in shell,
+filesystem, web, skill, and sub-agent tools are disabled, so the SDK receives
+no extra workspace access. Each task is capped at eight executed surface-tool
+calls, matching the controlled ReAct interaction budget. If the SDK reaches
+its internal turn limit, it receives one answer-only continuation with no
+additional tool budget.
+
+```bash
+pip install -e ".[claude-sdk]"
+
+WSB_API_BASE="https://your-provider.example/v1" \
+WSB_API_KEY="..." \
+python -m runner.run_sdk_baseline \
+  --model claude-sonnet-4-6 \
+  --tasks data/worksurface_lite/tasks/tasks_final_1151.jsonl \
+  --data-root data/worksurface_lite \
+  --concurrency 5 \
+  --resume
+```
+
+Native `ANTHROPIC_BASE_URL` and `ANTHROPIC_API_KEY` variables are also
+supported. The baseline is reported separately from S1--S6 because it measures
+an off-the-shelf model-plus-agent implementation rather than isolating a
+backbone under the hand-controlled routing policies.
+
 ## Benchmark construction
 
 ![Benchmark construction pipeline](assets/figures/construction_pipeline.png)
