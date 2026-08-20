@@ -16,6 +16,8 @@ Dataset and official trajectories:
 [Hugging Face](https://huggingface.co/datasets/lhpku20010120/WorkSurface-Bench).
 Project page:
 [haolpku.github.io/WorkSurface-Bench](https://haolpku.github.io/WorkSurface-Bench/).
+Companion build-before-query benchmark:
+[WorkSurface-Build](https://huggingface.co/datasets/lhpku20010120/WorkSurface-Build).
 
 ![WorkSurface-Bench overview](assets/figures/overview.png)
 
@@ -23,6 +25,28 @@ An agent first decides which knowledge surfaces are required, then acquires
 evidence and produces an answer. WorkSurface-Bench evaluates these stages
 separately, making routing failures distinguishable from evidence-acquisition
 and answer-synthesis failures.
+
+## Companion benchmark: WorkSurface-Build
+
+[WorkSurface-Build](https://huggingface.co/datasets/lhpku20010120/WorkSurface-Build)
+extends the evaluation upstream from **using** knowledge surfaces to
+**constructing** them. A Builder receives a raw Workspace-Bench-Lite workspace,
+role brief, and build budget before downstream questions are released. It may
+create any reusable artifacts—RAG indexes, SQL databases, graphs, or hybrid
+representations. The artifacts are then frozen and evaluated through a fixed
+Worker on the corresponding WorkSurface-Bench questions.
+
+| Benchmark | Evaluation question |
+| --- | --- |
+| **WorkSurface-Bench** | Can an agent select, query, and combine existing RAG, table, and graph surfaces? |
+| **WorkSurface-Build** | Can an agent build useful, reusable data surfaces from raw workspace files before future questions are known? |
+
+WorkSurface-Build contains 100 task workspaces and five persona-level reuse
+units. It deliberately defines no gold database, chunking policy, ontology, or
+canonical ingestion output: a build is judged by downstream answer quality,
+source-grounded evidence, efficiency, and amortized build cost. It reuses the
+1,151 audited WorkSurface-Bench questions and requires no additional
+task-level answer annotation.
 
 ## Repository structure
 

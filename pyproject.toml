@@ -31,6 +31,7 @@ claude-sdk = ["claude-agent-sdk>=0.2.128,<0.3"]
 [project.urls]
 Homepage = "https://github.com/haolpku/WorkSurface-Bench"
 Dataset = "https://huggingface.co/datasets/lhpku20010120/WorkSurface-Bench"
+"Build Dataset" = "https://huggingface.co/datasets/lhpku20010120/WorkSurface-Build"
 
 [tool.setuptools]
 packages = ["worksurface", "runner", "scoring"]
