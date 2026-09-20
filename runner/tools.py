@@ -74,14 +74,18 @@ class ProfileTools:
 
     # ---- RAG ----
     def kb_search(self, query: str, k: int = 3):
-        terms = [t for t in re.findall(r"\w+", query.lower()) if len(t) > 2]
+        query_lower = query.lower()
+        terms = [t for t in re.findall(r"\w+", query_lower) if len(t) > 2]
         scored = []
         for doc, d in self.kb.items():
             text = d["text"].lower()
+            source_file = str(d["meta"].get("source_file", "")).lower()
             searchable = " ".join((doc.lower(),
-                                   str(d["meta"].get("source_file", "")).lower(),
+                                   source_file,
                                    text))
             score = sum(searchable.count(t) for t in terms)
+            if doc.lower() in query_lower or (source_file and source_file in query_lower):
+                score += 1_000_000
             if score:
                 scored.append((score, doc, d))
         scored.sort(reverse=True, key=lambda x: x[0])
