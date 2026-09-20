@@ -97,6 +97,7 @@ class Projection:
         self.doc_aliases: dict[str, str] = {}
         self.table_aliases: dict[str, str] = {}
         self.graph_aliases: dict[str, str] = {}
+        self.benchmark_task_aliases: dict[str, str] = {}
         self._index_aliases()
 
     def _index_aliases(self) -> None:
@@ -148,6 +149,13 @@ class Projection:
             self.graph_aliases[old] = alias
         if len(set(self.graph_aliases.values())) != len(self.graph_aliases):
             raise ValueError("graph aliases are not unique")
+        benchmark_ids = {
+            row["id"] for rows in self.task_files.values() for row in rows
+        }
+        self.benchmark_task_aliases = {
+            task_id: f"item_{digest('benchmark-task', task_id)}"
+            for task_id in sorted(benchmark_ids)
+        }
 
     def _task_replacements(self, task_id: str) -> dict[str, str]:
         replacements = {
@@ -176,7 +184,7 @@ class Projection:
 
     def _replace_task_id_text(self, text: str, task_id: str) -> str:
         alias = self.task_aliases[task_id]
-        return re.sub(rf"\bTask\s+{re.escape(task_id)}\b", f"work item {alias}",
+        return re.sub(rf"\bTask\s+{re.escape(task_id)}\b", alias,
                       text, flags=re.IGNORECASE)
 
     def _rewrite_value(self, value: Any, replacements: dict[str, str],
@@ -264,9 +272,11 @@ class Projection:
             task.get("gold_evidence", []), task_id
         )
         projected["gold_answer"] = self._rewrite_gold_answer(task, replacements)
+        projected["id"] = self.benchmark_task_aliases[task["id"]]
         projected["source"]["task_id"] = self.task_aliases[task_id]
         projected["graph_entry_node"] = self.task_aliases[task_id]
         projected["projection"] = "C2a"
+        projected.pop("original_task_ids", None)
         # Scrub references in auxiliary public metadata (for example notes)
         # after identifier-aware evidence rewriting has preserved spans and
         # SQL literals.
@@ -357,10 +367,15 @@ class Projection:
         return graph
 
     def build_tasks(self) -> dict[str, list[dict]]:
-        projected = {
-            name: [self.project_task(row) for row in rows]
-            for name, rows in self.task_files.items()
-        }
+        projected = {}
+        for name, rows in self.task_files.items():
+            original = rows[0]
+            stem = name.removesuffix(".jsonl")
+            if not stem.startswith(original["id"]):
+                raise ValueError(f"task filename does not start with task ID: {name}")
+            variant = stem[len(original["id"]):]
+            public_name = self.benchmark_task_aliases[original["id"]] + variant + ".jsonl"
+            projected[public_name] = [self.project_task(row) for row in rows]
         for name, rows in projected.items():
             write_jsonl(self.out_dir / "public" / "tasks" / name, rows)
         return projected
@@ -368,6 +383,7 @@ class Projection:
     def write_private_map(self) -> None:
         payload = {
             "version": 1,
+            "benchmark_tasks": self.benchmark_task_aliases,
             "tasks": self.task_aliases,
             "files": [
                 {"source_task": task_id, "source_file": source_file,
@@ -398,6 +414,25 @@ class Projection:
             ).hexdigest(),
         }
         write_json(self.private_dir / "source_lock.json", payload)
+        return payload
+
+    @staticmethod
+    def lock_tree(root: Path, output: Path) -> dict:
+        files = []
+        for path in sorted(root.rglob("*")):
+            if path.is_file():
+                raw = path.read_bytes()
+                files.append({
+                    "path": str(path.relative_to(root)),
+                    "size": len(raw),
+                    "sha256": hashlib.sha256(raw).hexdigest(),
+                })
+        aggregate = hashlib.sha256(
+            "".join(item["sha256"] for item in files).encode("ascii")
+        ).hexdigest()
+        payload = {"root": str(root.resolve()), "files": files,
+                   "aggregate_sha256": aggregate}
+        write_json(output, payload)
         return payload
 
 
@@ -465,6 +500,8 @@ def validate_projection(out_dir: Path, profile_slug: str,
         "task_node": re.compile(rf"\btask_(?:{ids})\b", re.I),
         "prefixed_id": re.compile(rf"\bt(?:{ids})(?:__|::)", re.I),
         "source_task_field": re.compile(r"source_task", re.I),
+        "legacy_benchmark_task": re.compile(r"\b(?:ws_lite_\d+|pool_rt_\d+)\w*", re.I),
+        "original_task_ids_field": re.compile(r"original_task_ids", re.I),
     }
     violations = []
     for path in sorted(public.rglob("*")):
@@ -517,9 +554,12 @@ def main() -> None:
     tasks = projection.build_tasks()
     report = validate_projection(out_dir, source_profile.name, tasks,
                                  projection.task_aliases)
+    public_lock = projection.lock_tree(out_dir / "public",
+                                       out_dir / "private" / "public_lock.json")
     manifest = {
         "stage": "C2a",
         "source_lock_sha256": source_lock["aggregate_sha256"],
+        "public_lock_sha256": public_lock["aggregate_sha256"],
         "task_files": len(tasks),
         "full_runs": sum(name.endswith("__full.jsonl") for name in tasks),
         "subset_runs": sum("__subset" in name for name in tasks),

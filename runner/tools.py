@@ -88,6 +88,7 @@ class ProfileTools:
         hits = []
         for score, doc, d in scored[:k]:
             self.rag_files.add(d["meta"]["source_file"])
+            self.rag_files.add(doc)
             snippet = d["text"][:600]
             hits.append({"doc": doc, "source_file": d["meta"]["source_file"],
                          "score": score, "snippet": snippet})
