@@ -25,10 +25,16 @@ def validate_repetition(result_dir: Path, task_id: str, variant: str, repeat: in
     stem = f"{task_id}__{variant}"
     suffix = "run" if repeat == 1 else f"rep{repeat}"
     trace_path = result_dir / f"{stem}.{suffix}.jsonl"
-    status_path = result_dir / f"{stem}.{suffix if repeat > 1 else ''}status.json"
+    status_path = result_dir / (
+        f"{stem}.status.json" if repeat == 1 else f"{stem}.rep{repeat}.status.json"
+    )
     scored_path = result_dir / f"{stem}.{suffix}.scored.json"
     task_path = result_dir / f"{stem}.jsonl"
-    manifest_path = result_dir / f"{stem}.{suffix if repeat > 1 else ''}manifest.json"
+    manifest_path = result_dir / (
+        f"{stem}.manifest.json"
+        if repeat == 1
+        else f"{stem}.rep{repeat}.manifest.json"
+    )
 
     missing = [
         path.name
