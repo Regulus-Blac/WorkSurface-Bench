@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -132,6 +133,13 @@ def main() -> None:
     }
     for row in matrix:
         stem = row["stem"]
+        source_task = Path(row["task_path"])
+        task_snapshot = result_dir / f"{stem}.jsonl"
+        if task_snapshot.exists():
+            if task_snapshot.read_bytes() != source_task.read_bytes():
+                raise ValueError(f"task snapshot differs from projection: {stem}")
+        else:
+            shutil.copy2(source_task, task_snapshot)
         if completed(result_dir, stem):
             group_status["completed"].append(stem)
             continue
