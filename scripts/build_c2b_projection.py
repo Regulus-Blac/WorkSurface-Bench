@@ -34,7 +34,7 @@ def rewrite_kb_registry(profile: Path) -> int:
     path = profile / "kb_docs" / "registry.json"
     registry = read_json(path)
     for meta in registry.values():
-        meta.pop("source_file", None)
+        meta["artifact_id"] = meta.pop("source_file")
     write_json(path, registry)
     return len(registry)
 
@@ -48,7 +48,8 @@ def rewrite_tables(profile: Path) -> int:
         table = pq.read_table(parquet_path)
         keep = [name for name in table.column_names if name not in PRIVATE_COLUMNS]
         pq.write_table(table.select(keep), parquet_path)
-        for key in ("source_file", "sheet", "rows"):
+        meta["artifact_id"] = meta.pop("source_file")
+        for key in ("sheet", "rows"):
             meta.pop(key, None)
     write_json(registry_path, registry)
     return len(registry)
@@ -63,10 +64,14 @@ def validate(out_dir: Path, profile_slug: str) -> dict:
     for doc, meta in kb.items():
         if "source_file" in meta:
             errors.append(f"KB registry exposes source_file: {doc}")
+        if not meta.get("artifact_id"):
+            errors.append(f"KB registry lacks public artifact_id: {doc}")
     for view, meta in tables.items():
         leaked = {"source_file", "sheet", "rows"} & set(meta)
         if leaked:
             errors.append(f"table registry exposes {sorted(leaked)}: {view}")
+        if not meta.get("artifact_id"):
+            errors.append(f"table registry lacks public artifact_id: {view}")
         columns = set(pq.read_schema(profile / "tables" / meta["parquet"]).names)
         private = columns & PRIVATE_COLUMNS
         if private:

@@ -82,7 +82,8 @@ class ProfileTools:
         scored = []
         for doc, d in self.kb.items():
             text = d["text"].lower()
-            source_file = str(d["meta"].get("source_file", "")).lower()
+            source_file = str(d["meta"].get("source_file") or
+                              d["meta"].get("artifact_id", "")).lower()
             searchable = " ".join((doc.lower(),
                                    source_file,
                                    text))
@@ -111,7 +112,8 @@ class ProfileTools:
     # ---- Table ----
     def table_list(self):
         if self.contract == "c2b":
-            out = [{"table": view} for view in self.views]
+            out = [{"table": view, "artifact_id": meta["artifact_id"]}
+                   for view, meta in self.views.items()]
         else:
             out = [{"table": v, "rows": m["rows"],
                     "source_file": m["source_file"]} for v, m in self.views.items()]
