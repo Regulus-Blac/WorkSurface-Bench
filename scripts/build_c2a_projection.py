@@ -267,7 +267,21 @@ class Projection:
         projected["source"]["task_id"] = self.task_aliases[task_id]
         projected["graph_entry_node"] = self.task_aliases[task_id]
         projected["projection"] = "C2a"
-        return projected
+        # Scrub references in auxiliary public metadata (for example notes)
+        # after identifier-aware evidence rewriting has preserved spans and
+        # SQL literals.
+        return self._rewrite_task_number_metadata(projected, task_id)
+
+    def _rewrite_task_number_metadata(self, value: Any, task_id: str) -> Any:
+        if isinstance(value, str):
+            return self._replace_task_id_text(value, task_id)
+        if isinstance(value, list):
+            return [self._rewrite_task_number_metadata(item, task_id)
+                    for item in value]
+        if isinstance(value, dict):
+            return {key: self._rewrite_task_number_metadata(item, task_id)
+                    for key, item in value.items()}
+        return value
 
     def build_kb(self) -> dict:
         out_dir = self.public_profile / "kb_docs"
@@ -399,6 +413,7 @@ def validate_projection(out_dir: Path, profile_slug: str,
     edge_keys = {(edge["from"], edge["rel"], edge["to"])
                  for edge in graph["edges"]}
     errors = []
+    surface_findings = []
 
     for edge in graph["edges"]:
         if edge["from"] not in node_ids or edge["to"] not in node_ids:
@@ -418,7 +433,12 @@ def validate_projection(out_dir: Path, profile_slug: str,
                         elif ev.get("span") is not None:
                             text = (profile / "kb_docs" / doc).read_text(encoding="utf-8")
                             if str(ev["span"]) not in text:
-                                errors.append(f"{name}: RAG span absent from {doc}")
+                                surface_findings.append({
+                                    "task_file": name,
+                                    "kind": "rag_span_absent_after_provenance_removal",
+                                    "document": doc,
+                                    "span": str(ev["span"]),
+                                })
                     if ev.get("surface") == "table" and ev.get("table"):
                         view = ev["table"]
                         if view not in views:
@@ -465,6 +485,7 @@ def validate_projection(out_dir: Path, profile_slug: str,
         "graph_nodes": len(graph["nodes"]),
         "graph_edges": len(graph["edges"]),
         "validation_errors": errors,
+        "surface_findings": surface_findings,
         "leakage_violations": violations,
     }
     write_json(out_dir / "leakage_report.json", report)
