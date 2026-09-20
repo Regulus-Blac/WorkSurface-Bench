@@ -109,6 +109,28 @@ class ProfileTools:
                    for h in hits])
         return hits
 
+    def kb_read(self, doc: str, start: int = 0, length: int = 4000):
+        item = self.kb.get(doc)
+        if item is None:
+            self._log("kb_read", {"doc": doc, "start": start, "length": length},
+                      "rag", "not_found")
+            return {"error": f"no such document {doc}"}
+        start = max(0, int(start))
+        length = min(max(1, int(length)), 8000)
+        text = item["text"]
+        end = min(len(text), start + length)
+        source_file = item["meta"].get("source_file") or item["meta"].get("artifact_id")
+        if source_file:
+            self.rag_files.add(source_file)
+        self.rag_files.add(doc)
+        result = {"doc": doc, "text": text[start:end], "start": start,
+                  "end": end, "total_chars": len(text)}
+        if self.contract == "v1":
+            result["source_file"] = source_file
+        self._log("kb_read", {"doc": doc, "start": start, "length": length},
+                  "rag", {"doc": doc, "start": start, "end": end})
+        return result
+
     # ---- Table ----
     def table_list(self):
         if self.contract == "c2b":

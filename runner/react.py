@@ -27,6 +27,8 @@ TOOL_SPECS = {
     "rag": [
         ("kb_search", '{"tool":"kb_search","args":{"query":"<text>","k":3}}',
          "search the knowledge base; returns doc snippets"),
+        ("kb_read", '{"tool":"kb_read","args":{"doc":"<public-doc-id>","start":0,"length":4000}}',
+         "read a known public document by ID; returns bounded text without provenance"),
     ],
     "table": [
         ("table_list", '{"tool":"table_list","args":{}}',
@@ -52,6 +54,7 @@ TOOL_SPECS = {
 def _dispatch(tools, name: str, args: dict):
     fn = {
         "kb_search": tools.kb_search,
+        "kb_read": tools.kb_read,
         "table_list": tools.table_list,
         "table_describe": tools.table_describe,
         "table_query": tools.table_query,

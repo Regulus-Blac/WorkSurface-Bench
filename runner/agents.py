@@ -37,7 +37,8 @@ ALL_SURFACES = ["rag", "table", "graph"]
 
 def _surface_tools(tools: ProfileTools, surface: str):
     return {
-        "rag": [("kb_search", tools.kb_search)],
+        "rag": [("kb_search", tools.kb_search),
+                ("kb_read", tools.kb_read)],
         "table": [("table_list", tools.table_list),
                   ("table_describe", tools.table_describe),
                   ("table_query", tools.table_query)],
