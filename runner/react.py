@@ -131,16 +131,21 @@ def react_loop(task: dict, backbone, tools, allowed_surfaces: list[str],
             f"types: {', '.join(surface_hint)}. All tools remain available; "
             "decide which calls are needed and produce the answer yourself."
         )
+    answer_format = (
+        "\nFor a multi-part string answer, return the requested fields in question "
+        "order separated by '; ' (semicolon plus one space), not a JSON object "
+        "or comma-separated prose. For a single string, return only that string."
+    )
     system = (
         "You are an enterprise data agent. Answer the question by calling "
         "tools over the available knowledge surfaces. Each turn, reply with "
         "EXACTLY ONE JSON object and nothing else:\n"
         "  an action: {\"tool\":\"<name>\",\"args\":{...}}\n"
         "  or finish: {\"final_answer\": <value>}\n"
-        "Give final_answer as a bare number for numeric questions, or a JSON "
-        "array for list questions. If the evidence is insufficient, use "
+        "Give final_answer as a bare number for numeric questions, a JSON "
+        "array for list questions, or the requested string format below. If the evidence is insufficient, use "
         "{\"final_answer\":\"INSUFFICIENT_EVIDENCE\"}.\n\n"
-        f"Available tools:\n{menu}{graph_hint}{routing_hint}"
+        f"Available tools:\n{menu}{graph_hint}{routing_hint}{answer_format}"
     )
     messages = [
         {"role": "system", "content": system},
