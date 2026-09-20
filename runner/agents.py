@@ -163,11 +163,12 @@ def run_s3_naive_router(task, backbone, tools):
 
 def run_s4_react_all(task, backbone, tools):
     # all surfaces available; the realistic setting.
+    allowed = task.get("_allowed_surfaces") or ALL_SURFACES
     if isinstance(backbone, MockBackbone):
-        surfaces = task.get("required_surfaces") or ALL_SURFACES
+        surfaces = allowed
         _mock_exercise(tools, task, surfaces)
         return _finalize(tools, backbone, task, chosen=sorted(tools.surfaces_used))
-    ans = react_loop(task, backbone, tools, allowed_surfaces=ALL_SURFACES)
+    ans = react_loop(task, backbone, tools, allowed_surfaces=allowed)
     return _finalize(tools, backbone, task, chosen=sorted(tools.surfaces_used),
                      answer=ans)
 
