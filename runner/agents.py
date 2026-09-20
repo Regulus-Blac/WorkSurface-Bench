@@ -210,16 +210,22 @@ SETTINGS = {
 }
 
 
-def run_task(task: dict, setting: str, backbone: Backbone, out_root: str) -> dict:
+def run_task(task: dict, setting: str, backbone: Backbone, out_root: str,
+             scope: str = "task") -> dict:
     # per-task token accounting: reset cumulative usage before the task so
     # Efficiency reflects this task's spend across all ReAct turns.
     if hasattr(backbone, "reset"):
         backbone.reset()
     slug = persona_slug(task["source"].get("persona", ""))
-    tools = ProfileTools(out_root, slug, source_task_id=str(task["source"]["task_id"]))
+    if scope not in {"task", "persona"}:
+        raise ValueError(f"unknown workspace scope: {scope}")
+    source_task_id = (str(task["source"]["task_id"])
+                      if scope == "task" else None)
+    tools = ProfileTools(out_root, slug, source_task_id=source_task_id)
     try:
         trace = SETTINGS[setting](task, backbone, tools)
     finally:
         tools.close()
     trace["setting"] = setting
+    trace["scope"] = scope
     return trace
