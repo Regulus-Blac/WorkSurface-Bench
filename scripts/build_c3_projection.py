@@ -66,7 +66,9 @@ def main() -> None:
         f"Read {rag_ev['file']} and extract the decimal discount value in the "
         "explicit example sentence under its Discount section. Using the table "
         f"linked to artifact {artifact_id}, count rows whose discount equals "
-        "that exact value. Return `<value>; <count>`."
+        "that exact value. The normalized discount column is text: compare it "
+        "to a quoted VARCHAR literal, without an implicit numeric cast or "
+        "rounding. Return `<value>; <count>`."
     )
     base_slug = next((out_dir / "public" / "profiles").iterdir()).name
     write_task(full_path, full, question, "full", base_slug)
