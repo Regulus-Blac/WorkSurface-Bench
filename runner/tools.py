@@ -30,9 +30,12 @@ from worksurface.convert_tables import connect_registry
 
 class ProfileTools:
     def __init__(self, out_root: str, persona_slug: str,
-                 source_task_id: str | None = None):
+                 source_task_id: str | None = None, contract: str = "v1"):
         self.profile_dir = os.path.join(out_root, "profiles", persona_slug)
         self.source_task_id = source_task_id
+        if contract not in {"v1", "c2b"}:
+            raise ValueError(f"unknown tool contract: {contract}")
+        self.contract = contract
         self.trace = []
         self.surfaces_used: set[str] = set()
         self.rag_files: set[str] = set()
@@ -91,19 +94,27 @@ class ProfileTools:
         scored.sort(reverse=True, key=lambda x: x[0])
         hits = []
         for score, doc, d in scored[:k]:
-            self.rag_files.add(d["meta"]["source_file"])
+            source_file = d["meta"].get("source_file")
+            if source_file:
+                self.rag_files.add(source_file)
             self.rag_files.add(doc)
             snippet = d["text"][:600]
-            hits.append({"doc": doc, "source_file": d["meta"]["source_file"],
-                         "score": score, "snippet": snippet})
+            hit = {"doc": doc, "score": score, "snippet": snippet}
+            if self.contract == "v1":
+                hit["source_file"] = source_file
+            hits.append(hit)
         self._log("kb_search", {"query": query, "k": k}, "rag",
-                  [h["source_file"] for h in hits])
+                  [h["doc"] if self.contract == "c2b" else h["source_file"]
+                   for h in hits])
         return hits
 
     # ---- Table ----
     def table_list(self):
-        out = [{"table": v, "rows": m["rows"],
-                "source_file": m["source_file"]} for v, m in self.views.items()]
+        if self.contract == "c2b":
+            out = [{"table": view} for view in self.views]
+        else:
+            out = [{"table": v, "rows": m["rows"],
+                    "source_file": m["source_file"]} for v, m in self.views.items()]
         self._log("table_list", {}, "table", [o["table"] for o in out])
         return out
 
@@ -115,7 +126,10 @@ class ProfileTools:
         self.tables_used.add(view)
         cols = [c["name"] for c in m["columns"]]
         self._log("table_describe", {"view": view}, "table", cols)
-        return {"table": view, "rows": m["rows"], "columns": cols}
+        out = {"table": view, "columns": cols}
+        if self.contract == "v1":
+            out["rows"] = m["rows"]
+        return out
 
     def table_query(self, sql: str):
         # read-only guard

@@ -137,7 +137,9 @@ def run_s2_always_rag(task, backbone, tools):
     hits = tools.kb_search(task["question"])
     if isinstance(backbone, MockBackbone):
         return _finalize(tools, backbone, task, chosen=["rag"])
-    ctx = "\n\n".join(f"[{h['source_file']}] {h['snippet']}" for h in hits)
+    ctx = "\n\n".join(
+        f"[{h.get('source_file') or h['doc']}] {h['snippet']}" for h in hits
+    )
     ans = backbone.chat(
         "Answer using ONLY the documents below. Give a bare number, a JSON "
         "array, or INSUFFICIENT_EVIDENCE.",
@@ -221,7 +223,8 @@ def run_task(task: dict, setting: str, backbone: Backbone, out_root: str,
         raise ValueError(f"unknown workspace scope: {scope}")
     source_task_id = (str(task["source"]["task_id"])
                       if scope == "task" else None)
-    tools = ProfileTools(out_root, slug, source_task_id=source_task_id)
+    tools = ProfileTools(out_root, slug, source_task_id=source_task_id,
+                         contract=task.get("tool_contract", "v1"))
     try:
         trace = SETTINGS[setting](task, backbone, tools)
     finally:
