@@ -54,6 +54,99 @@ class MockBackbone:
         return "INSUFFICIENT_EVIDENCE"
 
 
+class AnthropicBackbone:
+    """Anthropic Messages wrapper for gateways such as DeepSeek Flash.
+
+    The benchmark loop uses a text protocol rather than native tool calls, so
+    this adapter only translates chat messages and preserves the same usage
+    accounting as ``APIBackbone``. It accepts ``ANTHROPIC_AUTH_TOKEN`` because
+    several compatible gateways reject an OpenAI-style key variable.
+    """
+
+    def __init__(self, model: str, base_url: str | None = None,
+                 api_key: str | None = None):
+        self.name = model
+        self.base_url = (base_url or os.environ.get("ANTHROPIC_BASE_URL") or "").rstrip("/")
+        self.api_key = (api_key or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+                        or os.environ.get("ANTHROPIC_API_KEY"))
+        self.timeout = int(os.environ.get("WSB_API_TIMEOUT", "300"))
+        if not (self.base_url and self.api_key):
+            raise RuntimeError(
+                "AnthropicBackbone needs ANTHROPIC_BASE_URL and "
+                "ANTHROPIC_AUTH_TOKEN (or ANTHROPIC_API_KEY)"
+            )
+        if self.base_url.endswith("/v1"):
+            self.base_url = self.base_url[:-3]
+        self.last_usage = {"input": 0, "output": 0}
+        self.cum_usage = {"input": 0, "output": 0}
+
+    def reset(self):
+        self.cum_usage = {"input": 0, "output": 0}
+
+    @staticmethod
+    def _split_messages(messages: list[dict]) -> tuple[str, list[dict]]:
+        system = ""
+        converted = []
+        for message in messages:
+            role = message.get("role", "user")
+            content = message.get("content", "")
+            if role == "system":
+                system = (system + "\n\n" + str(content)).strip()
+            else:
+                converted.append({"role": role, "content": content})
+        return system, converted
+
+    def _post(self, messages: list[dict], max_tokens: int) -> str:
+        import urllib.request
+
+        system, converted = self._split_messages(messages)
+        body = {
+            "model": self.name,
+            "messages": converted,
+            "max_tokens": max_tokens,
+            "temperature": 0,
+        }
+        if system:
+            body["system"] = system
+        req = urllib.request.Request(
+            self.base_url + "/v1/messages",
+            data=json.dumps(body).encode(),
+            headers={
+                "x-api-key": self.api_key,
+                "Authorization": f"Bearer {self.api_key}",
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                data = json.load(resp)
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError(f"Anthropic Messages request failed: {exc}") from exc
+        usage = data.get("usage", {})
+        self.last_usage = {
+            "input": usage.get("input_tokens", 0),
+            "output": usage.get("output_tokens", 0),
+        }
+        self.cum_usage["input"] += self.last_usage["input"]
+        self.cum_usage["output"] += self.last_usage["output"]
+        blocks = data.get("content", [])
+        return "".join(
+            block.get("text", "") for block in blocks
+            if isinstance(block, dict) and block.get("type") == "text"
+        )
+
+    def chat(self, system: str, user: str, *, max_tokens: int = 1024) -> str:
+        return self._post(
+            [{"role": "system", "content": system},
+             {"role": "user", "content": user}],
+            max_tokens,
+        )
+
+    def chat_messages(self, messages: list[dict], *, max_tokens: int = 1024) -> str:
+        return self._post(messages, max_tokens)
+
+
 class APIBackbone:
     """OpenAI-compatible chat wrapper. Requires WSB_API_BASE + WSB_API_KEY."""
 
@@ -114,4 +207,8 @@ def make_backbone(spec: str) -> Backbone:
     if spec.startswith("mock"):
         knowledge = spec.split(":", 1)[1] if ":" in spec else "oracle"
         return MockBackbone(knowledge=knowledge)
+    if (os.environ.get("ANTHROPIC_BASE_URL") and
+            (os.environ.get("ANTHROPIC_AUTH_TOKEN") or
+             os.environ.get("ANTHROPIC_API_KEY"))):
+        return AnthropicBackbone(model=spec)
     return APIBackbone(model=spec)
