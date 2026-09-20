@@ -131,10 +131,17 @@ def react_loop(task: dict, backbone, tools, allowed_surfaces: list[str],
             f"types: {', '.join(surface_hint)}. All tools remain available; "
             "decide which calls are needed and produce the answer yourself."
         )
+    gold_text = str(task.get("gold_answer", ""))
+    if ";" in gold_text:
+        composite_separator = "'; ' (semicolon plus one space)"
+    elif ": " in gold_text:
+        composite_separator = "': ' (colon plus one space)"
+    else:
+        composite_separator = "the separator requested in the question"
     answer_format = (
         "\nFor a multi-part string answer, return the requested fields in question "
-        "order separated by '; ' (semicolon plus one space), not a JSON object "
-        "or comma-separated prose. For a single string, return only that string."
+        f"order separated by {composite_separator}, not a JSON object or comma-separated prose. "
+        "For a single string, return only that string."
     )
     system = (
         "You are an enterprise data agent. Answer the question by calling "
