@@ -114,12 +114,13 @@ def react_loop(task: dict, backbone, tools, allowed_surfaces: list[str],
     menu = _tool_menu(allowed_surfaces)
     # v1 tasks use task_<id>; cleaned projections provide an opaque public
     # entry node so private source-task identifiers never enter observations.
+    has_public_entry = "graph_entry_node" in task
     task_node = task.get("graph_entry_node")
-    legacy_graph_ids = task_node is None
+    legacy_graph_ids = not has_public_entry
     if legacy_graph_ids:
         task_node = f"task_{task['source']['task_id']}"
     graph_hint = ""
-    if "graph" in allowed_surfaces:
+    if "graph" in allowed_surfaces and task_node:
         graph_hint = (
             f"\nYour workspace task's graph entry node is \"{task_node}\". "
             "Start graph exploration there (for example, graph_neighbors on "
@@ -130,6 +131,12 @@ def react_loop(task: dict, backbone, tools, allowed_surfaces: list[str],
                 " File nodes are \"t<id>::<filename>\"; when answering with "
                 "files, return the bare <filename> only."
             )
+    elif "graph" in allowed_surfaces:
+        graph_hint = (
+            "\nThis shared graph has no privileged task entry node. Use "
+            "graph_search_entities to find relevant public entities before "
+            "traversing their business relations."
+        )
     routing_hint = ""
     if surface_hint:
         routing_hint = (
