@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -29,9 +30,14 @@ def rag_span_reachable(profile: Path, task: dict) -> tuple[bool, list[str]]:
         if ev.get("surface") != "rag" or not ev.get("file") or ev.get("span") is None:
             continue
         path = profile / "kb_docs" / ev["file"]
-        if not path.exists() or str(ev["span"]) not in path.read_text(
-            encoding="utf-8", errors="replace"
-        ):
+        text = path.read_text(encoding="utf-8", errors="replace") if path.exists() else ""
+        span = str(ev["span"])
+        if re.fullmatch(r"[A-Za-z0-9_]+", span):
+            found = re.search(rf"(?<![A-Za-z0-9_]){re.escape(span)}(?![A-Za-z0-9_])",
+                              text) is not None
+        else:
+            found = span in text
+        if not found:
             failures.append(f"RAG span {ev['span']!r} absent from {ev['file']}")
     return not failures, failures
 
