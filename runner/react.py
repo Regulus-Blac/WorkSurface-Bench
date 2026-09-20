@@ -112,18 +112,24 @@ def react_loop(task: dict, backbone, tools, allowed_surfaces: list[str],
     """Run the loop; returns the model's final answer string. Side effect:
     tools.trace / surfaces_used / evidence sets are populated."""
     menu = _tool_menu(allowed_surfaces)
-    # The agent is working on a known workspace task, so it knows its own
-    # entry node in the dependency graph: task_<id>. File nodes look like
-    # "t<id>::<filename>"; answers about files should use the bare filename.
-    task_node = f"task_{task['source']['task_id']}"
+    # v1 tasks use task_<id>; cleaned projections provide an opaque public
+    # entry node so private source-task identifiers never enter observations.
+    task_node = task.get("graph_entry_node")
+    legacy_graph_ids = task_node is None
+    if legacy_graph_ids:
+        task_node = f"task_{task['source']['task_id']}"
     graph_hint = ""
     if "graph" in allowed_surfaces:
         graph_hint = (
-            f"\nYour workspace task's graph node is \"{task_node}\". Start "
-            f"graph exploration there (e.g. graph_neighbors on it). File nodes "
-            f"are \"t<id>::<filename>\"; when answering with files, return the "
-            f"bare <filename> only."
+            f"\nYour workspace task's graph entry node is \"{task_node}\". "
+            "Start graph exploration there (for example, graph_neighbors on "
+            "that node)."
         )
+        if legacy_graph_ids:
+            graph_hint += (
+                " File nodes are \"t<id>::<filename>\"; when answering with "
+                "files, return the bare <filename> only."
+            )
     routing_hint = ""
     if surface_hint:
         routing_hint = (

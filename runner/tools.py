@@ -78,7 +78,10 @@ class ProfileTools:
         scored = []
         for doc, d in self.kb.items():
             text = d["text"].lower()
-            score = sum(text.count(t) for t in terms)
+            searchable = " ".join((doc.lower(),
+                                   str(d["meta"].get("source_file", "")).lower(),
+                                   text))
+            score = sum(searchable.count(t) for t in terms)
             if score:
                 scored.append((score, doc, d))
         scored.sort(reverse=True, key=lambda x: x[0])
