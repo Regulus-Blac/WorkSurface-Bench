@@ -129,7 +129,21 @@ def inventory(data_root: str, task: dict, source_task_id: str | None) -> dict:
         tools.close()
 
 
-def replay(task: dict, trace: dict, manifest: dict) -> tuple[list[dict], dict, dict]:
+def dispatch_for_commit(tools: ProfileTools, name: str, args: dict,
+                        runner_commit: str):
+    # The failed first C2b contract intentionally removed every cross-surface
+    # join key. Its historical table_list returned only table IDs; artifact_id
+    # was introduced by C2b-r2. Reproduce that exact old observation here.
+    if (runner_commit.startswith("b56ad7e") and name == "table_list"
+            and tools.contract == "c2b"):
+        out = [{"table": view} for view in tools.views]
+        tools._log("table_list", {}, "table", [item["table"] for item in out])
+        return out
+    return _dispatch(tools, name, args)
+
+
+def replay(task: dict, trace: dict, manifest: dict,
+           runner_commit: str) -> tuple[list[dict], dict, dict]:
     scope = manifest["scope"]
     source_task_id = str(task["source"]["task_id"]) if scope == "task" else None
     data_root = manifest["data_root"]
@@ -149,7 +163,12 @@ def replay(task: dict, trace: dict, manifest: dict) -> tuple[list[dict], dict, d
         }
         for index, saved in enumerate(trace.get("tool_trace", []), 1):
             before = len(tools.trace)
-            observation = _dispatch(tools, saved.get("tool"), saved.get("args") or {})
+            observation = dispatch_for_commit(
+                tools,
+                saved.get("tool"),
+                saved.get("args") or {},
+                runner_commit,
+            )
             replay_summary = tools.trace[-1]["result"] if len(tools.trace) > before else None
             visible = _truncate(observation)
             keys = recursive_keys(observation)
@@ -238,7 +257,9 @@ def audit_run(stage: str, role: str, group_dir: Path, run_path: Path,
         raise ValueError(f"{run_path}: trace/task mismatch")
 
     score = score_rows[0]
-    calls, actual_inventory, persona_inventory = replay(task, trace, manifest)
+    calls, actual_inventory, persona_inventory = replay(
+        task, trace, manifest, str(group_manifest.get("runner_commit", ""))
+    )
     allowed = task.get("_allowed_surfaces")
     effective_allowed = set(allowed or ("rag", "table", "graph"))
     required = set(task.get("required_surfaces", []))
