@@ -131,6 +131,36 @@ def inventory(data_root: str, task: dict, source_task_id: str | None) -> dict:
 
 def dispatch_for_commit(tools: ProfileTools, name: str, args: dict,
                         runner_commit: str):
+    # C0/C1 ran before filenames and source_file metadata were added to the
+    # lexical search corpus. Reusing the later search would change rankings
+    # and, for some queries, fabricate hits the model never observed.
+    if runner_commit.startswith("f0c3fc7") and name == "kb_search":
+        query = str(args.get("query", ""))
+        k = int(args.get("k", 3))
+        terms = [term for term in re.findall(r"\w+", query.lower())
+                 if len(term) > 2]
+        scored = []
+        for doc, item in tools.kb.items():
+            text = item["text"].lower()
+            score = sum(text.count(term) for term in terms)
+            if score:
+                scored.append((score, doc, item))
+        scored.sort(reverse=True, key=lambda row: row[0])
+        hits = []
+        for score, doc, item in scored[:k]:
+            source_file = item["meta"]["source_file"]
+            tools.rag_files.add(source_file)
+            hits.append({
+                "doc": doc,
+                "source_file": source_file,
+                "score": score,
+                "snippet": item["text"][:600],
+            })
+        tools._log(
+            "kb_search", {"query": query, "k": k}, "rag",
+            [hit["source_file"] for hit in hits],
+        )
+        return hits
     # The failed first C2b contract intentionally removed every cross-surface
     # join key. Its historical table_list returned only table IDs; artifact_id
     # was introduced by C2b-r2. Reproduce that exact old observation here.
